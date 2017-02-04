@@ -43,9 +43,14 @@ public Teleop() {
     	//left axis = 1, right axis = 5
     	double leftSpeed = Robot.oi.getDriverJoystick().getRawAxis(1);
     	double rightSpeed = Robot.oi.getDriverJoystick().getRawAxis(5);
+    	
+        //z axis
+    	double conveyorSpeed = Robot.oi.getDriverJoystick().getZ(); //HEYYYYY KIIIOOOONN
 
     	Robot.driveTrain.driveLeft(leftSpeed);
         Robot.driveTrain.driveRight(rightSpeed);
+        
+        Robot.conveyor.set(conveyorSpeed);
     }
 
     // Make this return true when this Command no longer needs to run execute()

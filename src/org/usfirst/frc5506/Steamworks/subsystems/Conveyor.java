@@ -53,5 +53,9 @@ public class Conveyor extends Subsystem {
     	conveyor.set(speed);
     	
     }
+    
+    public boolean getSwitch() {
+    	return !conveyorSwitch.get();
+    }
 }
 

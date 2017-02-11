@@ -49,11 +49,14 @@ public class DriveTrain extends Subsystem {
     }
     
     public void driveLeft(double speed) {
-    	driveLeft.set(speed);
+    	driveLeft.set(-speed);
     }
     
     public void driveRight(double speed) {
     	driveRight.set(speed);
+    }
+    
+    public void driveArcade(double forward, double turn) {
     }
 }
 

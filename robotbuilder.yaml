@@ -18,7 +18,7 @@ Children:
           default: '0'
           name: Output Channel (PWM)
           validators: &id003 [PWMOutput]
-          value: '1'
+          value: '2'
       Base: Speed Controller
       Name: DriveLeft
     - Children: []
@@ -34,7 +34,7 @@ Children:
           default: '0'
           name: Output Channel (PWM)
           validators: *id003
-          value: '2'
+          value: '1'
       Base: Speed Controller
       Name: DriveRight
     Properties:
@@ -78,7 +78,7 @@ Children:
           default: '0'
           name: Input Channel (Digital)
           validators: [DigitalChannel]
-          value: '0'
+          value: '1'
       Base: Limit Switch
       Name: ConveyorSwitch
     Properties:
@@ -205,6 +205,6 @@ Properties:
   Wiring file location: !!robotbuilder.data.properties.FileProperty {default: /home/tupster24/,
     extension: null, folder: true, name: Wiring file location, validators: null, value: /home/tupster24/}
   Autonomous Command: !!robotbuilder.data.properties.TypeSelectionProperty {default: None,
-    name: Autonomous Command, type: Command, validators: null, value: Autonomous Command}
+    name: Autonomous Command, type: Command, validators: null, value: Auto}
 Base: Robot
 Name: Steamworks

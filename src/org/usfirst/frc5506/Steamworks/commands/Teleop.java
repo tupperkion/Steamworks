@@ -10,6 +10,7 @@
 
 
 package org.usfirst.frc5506.Steamworks.commands;
+import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj.command.Command;
 import org.usfirst.frc5506.Steamworks.Robot;
 
@@ -19,7 +20,7 @@ import org.usfirst.frc5506.Steamworks.Robot;
 public class Teleop extends Command {
 	
 	// "true" removes tank drive functionality, and switches to arcade drive via j1
-	public boolean j1arcade = true;
+	public boolean j1arcade = false;
 	
 	public boolean conveyorPos = false;
 
@@ -50,15 +51,15 @@ public Teleop() {
     		double x = Robot.oi.getFunctionJoystick().getX() / 2;
     		double y = Robot.oi.getFunctionJoystick().getY() / 2;
     		
-    		Robot.driveTrain.driveLeft(y + x);
-    		Robot.driveTrain.driveRight(y - x);
+    		Robot.driveTrain.driveRight(y + x);
+    		Robot.driveTrain.driveLeft(y - x);
 
 			if (Robot.conveyor.getSwitch())
 				conveyorPos = false;
-    		if (Robot.oi.getFunctionJoystick().getRawButton(11) && !Robot.conveyor.getSwitch()) {
-    			Robot.conveyor.set(conveyorPos ? -0.5 : -1);
+    		if (Robot.oi.getFunctionJoystick().getRawButton(11)) {
     			if (Robot.conveyor.getSwitch())
     				conveyorPos = true;
+    			Robot.conveyor.set(conveyorPos ? -0.5 : -1);
     		} else if (Robot.oi.getFunctionJoystick().getRawButton(12))
     			Robot.conveyor.set(1);
     		else
@@ -67,26 +68,39 @@ public Teleop() {
 	    	//left axis = 1, right axis = 5
 	    	double leftSpeed = Robot.oi.getDriverJoystick().getRawAxis(1);
 	    	double rightSpeed = Robot.oi.getDriverJoystick().getRawAxis(5);
+
+	    	Robot.oi.getDriverJoystick().setRumble(RumbleType.kLeftRumble, Math.abs(leftSpeed));
+	    	Robot.oi.getDriverJoystick().setRumble(RumbleType.kRightRumble, Math.abs(rightSpeed));
 	    	
 	        //z axis
-	    	double conveyorSpeed = Robot.oi.getDriverJoystick().getZ(); //HEYYYYY KIIIOOOONN
+	    	double conveyorSpeed = Robot.oi.getDriverJoystick().getRawAxis(2)
+	    			- Robot.oi.getDriverJoystick().getRawAxis(3); //HEYYYYY KIIIOOOONN
 	
-	    	Robot.driveTrain.driveLeft(leftSpeed);
-	        Robot.driveTrain.driveRight(rightSpeed);
-	        
+	    	Robot.driveTrain.driveLeft(Math.abs(leftSpeed) > 0.15 ? leftSpeed / 2 : 0);
+	        Robot.driveTrain.driveRight(Math.abs(rightSpeed) > 0.15 ? rightSpeed / 2 : 0);
+	        if (conveyorSpeed < 0 && Robot.conveyor.getSwitch())
+	        	conveyorPos = true;
+	        else if (Robot.conveyor.getSwitch())
+	        	conveyorPos = false;
+	        if (conveyorSpeed < 0 && conveyorPos)
+	        	conveyorSpeed /= 2;
 	        Robot.conveyor.set(conveyorSpeed);
     	}
     }
 
     // Make this return true when this Command no longer needs to run execute()
     protected boolean isFinished() {
-        return false;
+        return Robot.oi.getDriverJoystick().getRawButton(7) ||
+        		Robot.oi.getDriverJoystick().getRawButton(8) ||
+        		Robot.oi.getDriverJoystick().getRawButton(9) ||
+        		Robot.oi.getDriverJoystick().getRawButton(10);
     }
 
     // Called once after isFinished returns true
     protected void end() {
     	Robot.driveTrain.driveLeft(0);
     	Robot.driveTrain.driveRight(0);
+    	Robot.conveyor.set(0);
     }
 
     // Called when another command which requires one or more of the same

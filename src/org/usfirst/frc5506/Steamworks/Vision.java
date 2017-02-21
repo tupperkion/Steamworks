@@ -22,6 +22,11 @@ public class Vision {
 		inited = true;
 	}
 	
+	// is the vision code ready and running?
+	public static boolean isalive() {
+		return table.getBoolean("running", false);
+	}
+	
 	// can the camera see and ID the tape?
 	public static boolean izgud() {
 		return table.getBoolean("izgud", false);
@@ -67,3 +72,32 @@ public class Vision {
 		return getTurningAngle(getDistance());
 	}
 }
+/*
+
+C
+ |\
+ | \
+ |  \
+ \   \
+  |   \
+  |    \
+  |     \ a
+  \      \
+ b |      \
+   |       \
+   |        \
+   \_________\
+  A     c     B
+
+A: Position of gear
+B: Position of camera
+C: Position of peg
+
+c: static, distance between camera and robot
+a: detected by VT
+b: calculated
+
+B: detected by VT
+A: calculated
+*/
+

@@ -69,7 +69,7 @@ public Teleop() {
 		//	}
 		//} else
 		//	aWasPressed = false;
-    	if (Robot.oi.getDriverJoystick().getRawButton(1)) {
+    	/*if (Robot.oi.getDriverJoystick().getRawButton(1)) {
     		Robot.driveTrain.driveLeftCurved(1);
     		Robot.driveTrain.driveRightCurved(1);
     		return;
@@ -78,7 +78,7 @@ public Teleop() {
     		Robot.driveTrain.driveLeftCurved(-1);
     		Robot.driveTrain.driveRightCurved(-1);
     		return;
-    	}
+    	}*/
     	if (j1arcade) {
     		double x = Robot.oi.getFunctionJoystick().getX() / (fullPower ? 1 : 2);
     		double y = -Robot.oi.getFunctionJoystick().getY() / (fullPower ? 1 : 2);
@@ -109,7 +109,8 @@ public Teleop() {
 	        //z axis
 	    	double conveyorSpeed = Robot.oi.getDriverJoystick().getRawAxis(2)
 	    			- Robot.oi.getDriverJoystick().getRawAxis(3)
-	    			+ Robot.oi.getFunctionJoystick().getZ();
+	    			+ Robot.oi.getFunctionJoystick().getRawAxis(2)
+	    			- Robot.oi.getFunctionJoystick().getRawAxis(3);
 	
 	    	if (Robot.driveTrain.teleop) {
 		    	Robot.driveTrain.driveLeftCurved(Math.abs(leftSpeed) > 0.15 ? leftSpeed * (fullPower ? 1 : 0.75) : 0);

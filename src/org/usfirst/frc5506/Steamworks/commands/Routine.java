@@ -44,7 +44,11 @@ public class Routine extends CommandGroup {
     	String[] commands = script.split(";");
     	for (int i = 0; i < commands.length; i++) {
     		String j = commands[i];
-    		if (j.charAt(0) == '/') {
+    		if (j == "/gear") {
+    			addParallel(new Gear());
+    		} else if (j == "gear") {
+    			addSequential(new Gear());
+    		} else if (j.charAt(0) == '/') {
     			addParallel(new RoutineCommand(j.substring(1)));
     		} else
     			addSequential(new RoutineCommand(j));

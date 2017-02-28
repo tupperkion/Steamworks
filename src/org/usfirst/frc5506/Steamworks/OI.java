@@ -11,11 +11,11 @@
 
 package org.usfirst.frc5506.Steamworks;
 
-import org.usfirst.frc5506.Steamworks.commands.*;
+import org.usfirst.frc5506.Steamworks.commands.Routine;
+import org.usfirst.frc5506.Steamworks.commands.RoutineCommand;
 
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.buttons.JoystickButton;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 
 /**

@@ -10,24 +10,22 @@
 
 
 package org.usfirst.frc5506.Steamworks.commands;
-import edu.wpi.first.wpilibj.command.Command;
-import edu.wpi.first.wpilibj.command.Subsystem;
-
-import java.util.HashMap;
-
 import org.usfirst.frc5506.Steamworks.Robot;
+
+import edu.wpi.first.wpilibj.command.Command;
 
 /**
  * syntax: command1;command2;/command3:0.3;command4:/1:5;command5;...lastCommand
  * 
  * Use ":" to split arguments, e.g. "command:2:3" runs "command" with 2 as arg1 and 3 as arg2
+ * 		For example, to run the RunLeft(speed, time) command with 1 as speed and 2 as time, "RunLeft:1:2"
  * Use ";" to seperate commands, e.g. to run "command1" then "command2", use "command1;command2"
  * Use "/" before a command to run in parallel, e.g. to run "command1",
  * 		then run "command2" and "command3" at the same time (after "command1"), use "command1;/command2:command3"
  * 
  * 		Don't put "/" before your last command, there is no reason to.
  * 
- * Commands: (required param)	[optional param]
+ * Commands:
  * 
  * Drive(seconds)
  * 		Drives straight forward at full speed
@@ -37,12 +35,10 @@ import org.usfirst.frc5506.Steamworks.Robot;
  * 		Runs right motor back at full speed and left forwards at full speed
  * RunLeft(speed, time)
  * RunRight(speed, time)
- * CurveLeft(speed)
- * 		Accelerates left motor by 2%/tick until it reaches the required speed
- * 		At that rate, it nominally takes 1 second to accelerate to full speed
- * CurveRight(speed)
- * 		Accelerates right motor by 2%/tick until it reaches the required speed
- * 		At that rate, it nominally takes 1 second to accelerate to full speed
+ * CurveLeft(speed, time)
+ * 		Runs the left motor, applying acceleration curve as necessary
+ * CurveRight(speed, time)
+ * 		Runs the right motor, applying acceleration curve as necessary
  * Gear
  * 		Lines up and puts the gear on the peg
  * FlattenConveyer
@@ -52,8 +48,19 @@ import org.usfirst.frc5506.Steamworks.Robot;
  * PushGear
  * 		Moves conveyer towards gear end (as far as it will go)
  * 		Sorry, too lazy to come up with a better name
+ * BumpConveyer
+ * 		Moves conveyer towards gear end for 1 second
+ * SafeReset
+ * 		Runs 'BumpConveyer;ResetConveyer'
+ * 		Used to ensure safe position of conveyer belt when code is started
  * Wait(seconds)
  * 		Pauses
+ * Stop
+ * 		Stops driveTrain motors. DOES NOT STOP CONVEYER BELT.
+ * 		Conveyer belt will be stopped anyway when relevant commands finish.
+ * 
+ * IMPORTANT: commands don't automatically stop DriveTrain motors!
+ * Use the Stop command to stop motors!
  */
 public class RoutineCommand extends Command {
     private String command;
@@ -64,7 +71,6 @@ public class RoutineCommand extends Command {
     
     // used by some commands
     private boolean timeoutSet = false;
-    private double accSpeed = 0d;
     
     // this allows a command to stop during execute() so I don't need two switch statements, shortens code significantly
     private boolean done = false;
@@ -77,11 +83,11 @@ public class RoutineCommand extends Command {
         arg2 = split.length > 2 ? Double.valueOf(split[2]) : 0d;
 
         // IT IS IMPERITIVE THAT COMMANDS THAT MOVE SOMETHING ARE ADDED HERE
-        // otherwise, motors WON'T STOP MOVING after the command ends
+        // otherwise, Routine will fight with Teleop, hindering proper operation
         if (command.equals("drive") || command.equals("turnleft") || command.equals("turnright") || command.equals("gear") ||
         	command.equals("runleft") || command.equals("runright") || command.equals("curveleft") || command.equals("curveright"))
         	requiresDriveTrain = true;
-        if (command.equals("flattenconveyer") || command.equals("resetconveyer") || command.equals("pushgear"))
+        if (command.equals("flattenconveyer") || command.equals("resetconveyer") || command.equals("pushgear") || command.equals("bumpconveyer"))
         	requiresConveyer = true;
         //if (requiresDriveTrain)
         //	requires(Robot.driveTrain);
@@ -92,7 +98,6 @@ public class RoutineCommand extends Command {
     // Called just before this Command runs the first time
     protected void initialize() {
     	timeoutSet = false;
-    	accSpeed = 0d;
     	if (requiresConveyer)
         	Robot.conveyer.teleop = false;
     	if (requiresDriveTrain)
@@ -110,9 +115,13 @@ public class RoutineCommand extends Command {
     			setTimeout(arg);
     			Robot.driveTrain.driveArcade(0, -0.5);
     			break;
-    		case("gear"):
-    			// TODO
-    			done = true;
+    		case("curveleft"):
+    			setTimeout(arg2);
+    			Robot.driveTrain.driveLeftCurved(arg);
+    			break;
+    		case("curveright"):
+    			setTimeout(arg2);
+    			Robot.driveTrain.driveRightCurved(arg);
     			break;
     		case("runleft"):
     			setTimeout(arg2);
@@ -122,6 +131,9 @@ public class RoutineCommand extends Command {
     			setTimeout(arg2);
     			Robot.driveTrain.driveRight(arg);
     			break;
+    		case("bumpconveyer"):
+    			setTimeout(1);
+    			Robot.conveyer.set(1);
     		case("wait"):
     			setTimeout(arg);
     			break;
@@ -137,24 +149,6 @@ public class RoutineCommand extends Command {
     // Called repeatedly when this Command is scheduled to run
     protected void execute() {
     	switch(command) {
-			case("curveleft"):
-				if (arg > 0) {
-					Robot.driveTrain.driveLeft(++accSpeed / 50);
-					done = accSpeed / 50 >= arg;
-				} else {
-					Robot.driveTrain.driveLeft(--accSpeed / 50);
-					done = accSpeed / 50 <= arg;
-				}
-				break;
-			case("curveright"):
-				if (arg > 0) {
-					Robot.driveTrain.driveRight(++accSpeed / 50);
-					done = accSpeed / 50 >= arg;
-				} else {
-					Robot.driveTrain.driveRight(--accSpeed / 50);
-					done = accSpeed / 50 <= arg;
-				}
-				break;
     		case("gear"):
     			// TODO
     			break;
@@ -171,9 +165,9 @@ public class RoutineCommand extends Command {
 				break;
     		case("pushgear"):
     			Robot.conveyer.set(1);
-    			if (Robot.conveyer.conveyorPos && !timeoutSet) {
+    			if (!Robot.conveyer.conveyorPos && !timeoutSet) {
     				timeoutSet = true;
-    				setTimeout(3);
+    				setTimeout(5);
     			}
     			break;
 			default:
@@ -188,8 +182,6 @@ public class RoutineCommand extends Command {
 
     // Called once after isFinished returns true
     protected void end() {
-    	//if (requiresDriveTrain)
-    	//	Robot.driveTrain.driveArcade(0, 0); // why use two lines of code when you can have one?
     	// notice the lack of "else" here
     	// this allows a command to safely require both the DriveTrain and the Conveyer
     	if (requiresDriveTrain)
@@ -203,8 +195,6 @@ public class RoutineCommand extends Command {
     // Called when another command which requires one or more of the same
     // subsystems is scheduled to run
     protected void interrupted() {
-    	//if (requiresDriveTrain)
-    	//	Robot.driveTrain.driveArcade(0, 0); // why use two lines of code when you can have one?
     	// notice the lack of "else" here
     	// this allows a command to safely require both the DriveTrain and the Conveyer
     	if (requiresDriveTrain)

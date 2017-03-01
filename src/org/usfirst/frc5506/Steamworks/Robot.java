@@ -39,7 +39,7 @@ public class Robot extends IterativeRobot {
     Command teleop;
     
     // 1 = left; 2 = center; 3 = right;
-    public byte starting = 1;
+    public static byte starting = 1;
     // I technically don't need '<Byte>' here, but just for safety, I use it
 	public SendableChooser<Byte> pos;
     public SendableChooser<Command> autochooser; // same for '<Command>' here
@@ -134,7 +134,6 @@ public class Robot extends IterativeRobot {
         // teleop starts running. If you want the autonomous to
         // continue until interrupted by another command, remove
         // this line or comment it out.
-    	auto = autochooser.getSelected();
         if (auto != null) auto.cancel();
         if (teleop != null) teleop.start();
     }
@@ -157,6 +156,7 @@ public class Robot extends IterativeRobot {
 
 	public void autonomousInit() {
 	    // schedule the autonomous command (example)
+    	auto = autochooser.getSelected();
 	    if (auto != null) auto.start();
 	}
 	

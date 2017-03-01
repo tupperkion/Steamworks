@@ -10,9 +10,7 @@ public class Vision {
 	public static final int cameraWidth = 480;
 	
 	// distance from middle of bot to camera
-	public static final double offset = 8.5d;
-	// make calculations more convenient
-	public static final double c = offset;
+	public static final double c = 8.5d;
 	
 	public static boolean inited = false;
 	
@@ -53,6 +51,7 @@ public class Vision {
 	
 	/**
 	 * Calculates turning angle. Provide "distance" to skip calculations.
+	 * This is the exact angle that the robot needs to turn.
 	 * 
 	 * @param distance	the distance from the robot to the tape (getDistance())
 	 */
@@ -62,7 +61,7 @@ public class Vision {
 		double b = distance;
 		if (a <= c)
 			return Math.toDegrees(Math.asin(a * (Math.sin(B) / b)));
-		return 180 - Math.toDegrees(B - Math.asin(c * (Math.sin(B) / b)));
+		return 90 - Math.toDegrees(B - Math.asin(c * (Math.sin(B) / b)));
 	}
 	
 	/**

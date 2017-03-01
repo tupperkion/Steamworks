@@ -11,6 +11,8 @@
 
 package org.usfirst.frc5506.Steamworks.commands;
 
+import org.usfirst.frc5506.Steamworks.Robot;
+
 import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.command.CommandGroup;
 
@@ -29,6 +31,30 @@ public class Auto extends CommandGroup {
     	if (selectedCommand != null) {
     		addParallel(new Routine("SafeReset"));
     		selectedCommand.start();
+    	}
+    	if (skipGear) {
+    		switch(Robot.starting) {
+    			case(1):
+    			case(3):
+    				addSequential(new Routine("/curveleft:1:3;curveright:1:3;stop"));
+    				break;
+    			case(2):
+    			default:
+    				addSequential(new Routine("/curveleft:0.3;1;curveright:1:3;stop;turnto:45;/curveleft:0.7:2;curveleft:0.7:2;turnto:0;/curveleft:0.7:2;curveright:0.7:2;stop"));
+    				break;
+    		}
+    	} else {
+    		switch(Robot.starting) {
+    			case(1):
+    			case(3):
+    				addSequential(new Routine("/curveleft:0.5:1;curveright:0.5:1;stop"));
+    				addSequential(new Gear(true));
+    				break;
+    			case(2):
+    			default:
+    				addSequential(new Gear(true));
+    				break;
+    		}
     	}
     } 
 }

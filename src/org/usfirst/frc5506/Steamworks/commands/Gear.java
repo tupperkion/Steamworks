@@ -13,6 +13,14 @@ public class Gear extends Command {
 	
 	public boolean targetFound = false;
 	public boolean farAway = true;
+	public boolean search;
+	
+	public Gear(boolean search) {
+		super();
+		this.search = search;
+	}
+	
+	public Gear() { this(false); }
 	
 	public void execute() {
 		timeleft--;
@@ -28,6 +36,14 @@ public class Gear extends Command {
 			if (targetFound) {
 				double distance = Vision.getDistance();
 				angle = (Robot.driveTrain.getGyro() + Vision.getTurningAngle(distance)) % 360;
+			} else if (search) {
+				if (Robot.starting == 1) {
+					Robot.driveTrain.driveLeftCurved(0.4);
+					Robot.driveTrain.driveRight(0);
+				} else {
+					Robot.driveTrain.driveRightCurved(0.4);
+					Robot.driveTrain.driveLeft(0);
+				}
 			}
 		} else if (Math.abs((Robot.driveTrain.getGyro() % 360) - angle) < 5) {
 			Robot.driveTrain.driveRightCurved(Vision.izgud() ? -0.25 : -0.5);

@@ -87,5 +87,22 @@ public class DriveTrain extends Subsystem {
     public double getGyroMod() {
     	return getGyro() % 360;
     }
+    
+    /**
+     * Calculates how far (and which way) to turn to match a target angle
+     * @param target target (will be normalized between 0 and 360)
+     * @return angle angle (between -180 and 180, inclusive)
+     */
+    public double getTurningAngle(double target) {
+    	target = target % 360;
+    	double current = getGyroMod();
+    	if (Math.abs(target - current) <= 180) {
+    		return target - current;
+    	} else if (target < current) {
+    		return target + 360 - current;
+    	} else {
+    		return target - 360 - current;
+    	}
+    }
 }
 

@@ -39,6 +39,8 @@ import edu.wpi.first.wpilibj.command.Command;
  * 		Runs the left motor, applying acceleration curve as necessary
  * CurveRight(speed, time)
  * 		Runs the right motor, applying acceleration curve as necessary
+ * TurnTo(angle)
+ * 		Runs one motor forwards to efficiently turn to a specific angle
  * Gear
  * 		Lines up and puts the gear on the peg
  * FlattenConveyer
@@ -149,8 +151,28 @@ public class RoutineCommand extends Command {
     // Called repeatedly when this Command is scheduled to run
     protected void execute() {
     	switch(command) {
-    		case("gear"):
-    			// TODO
+    		case("turnto"):
+    			double angle = Robot.driveTrain.getTurningAngle(arg);
+    			if (Math.abs(angle) < 10) {
+    				done = true;
+    				Robot.driveTrain.driveArcade(0, 0);
+    			} else if (Math.abs(angle) < 35) {
+    				if (angle < 0) {
+    					Robot.driveTrain.driveLeftCurved(0.3);
+    					Robot.driveTrain.driveRight(0);
+    				} else {
+    					Robot.driveTrain.driveRightCurved(0.3);
+    					Robot.driveTrain.driveLeft(0);
+    				}
+    			} else {
+    				if (angle < 0) {
+    					Robot.driveTrain.driveLeftCurved(0.5);
+    					Robot.driveTrain.driveRight(0);
+    				} else {
+    					Robot.driveTrain.driveRightCurved(0.5);
+    					Robot.driveTrain.driveLeft(0);
+    				}
+    			}
     			break;
     		case("flattenconveyer"):
     			Robot.conveyer.set(-1);

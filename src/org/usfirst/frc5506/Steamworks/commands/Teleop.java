@@ -97,7 +97,7 @@ public Teleop() {
 	    	//left axis = 1, right axis = 5
 	    	double leftSpeed = -Robot.oi.getDriverJoystick().getRawAxis(1);
 	    	double rightSpeed = -Robot.oi.getDriverJoystick().getRawAxis(5);
-	    	if (Math.abs(leftSpeed) >= 0.15)
+	    	/*if (Math.abs(leftSpeed) >= 0.15)
 	    		Robot.oi.getDriverJoystick().setRumble(RumbleType.kLeftRumble, Math.abs(leftSpeed));
 	    	else
 	    		Robot.oi.getDriverJoystick().setRumble(RumbleType.kLeftRumble, 0);
@@ -105,7 +105,7 @@ public Teleop() {
 	    		Robot.oi.getDriverJoystick().setRumble(RumbleType.kRightRumble, Math.abs(rightSpeed));
 	    	else
 	    		Robot.oi.getDriverJoystick().setRumble(RumbleType.kRightRumble, 0);
-	    	
+	    	*/
 	        //z axis
 	    	double conveyorSpeed = Robot.oi.getDriverJoystick().getRawAxis(2)
 	    			- Robot.oi.getDriverJoystick().getRawAxis(3)
@@ -125,9 +125,10 @@ public Teleop() {
 
     // Make this return true when this Command no longer needs to run execute()
     protected boolean isFinished() {
-        		return Robot.oi.getDriverJoystick().getRawButton(8) ||
-        		Robot.oi.getDriverJoystick().getRawButton(9) ||
-        		Robot.oi.getDriverJoystick().getRawButton(10);
+    			return false;
+        		//return Robot.oi.getDriverJoystick().getRawButton(8) ||
+        		//Robot.oi.getDriverJoystick().getRawButton(9) ||
+        		//Robot.oi.getDriverJoystick().getRawButton(10);
     }
 
     // Called once after isFinished returns true
@@ -135,14 +136,17 @@ public Teleop() {
     	Robot.driveTrain.driveLeft(0);
     	Robot.driveTrain.driveRight(0);
     	Robot.conveyer.set(0);
-    	Robot.oi.getDriverJoystick().setRumble(RumbleType.kLeftRumble, 0);
-    	Robot.oi.getDriverJoystick().setRumble(RumbleType.kRightRumble, 0);
-    	
+    	//Robot.oi.getDriverJoystick().setRumble(RumbleType.kLeftRumble, 0);
+    	//Robot.oi.getDriverJoystick().setRumble(RumbleType.kRightRumble, 0);
     }
 
     // Called when another command which requires one or more of the same
     // subsystems is scheduled to run
     protected void interrupted() {
-    	
+   	Robot.driveTrain.driveLeft(0);
+        Robot.driveTrain.driveRight(0);
+        Robot.conveyer.set(0);
+        //Robot.oi.getDriverJoystick().setRumble(RumbleType.kLeftRumble, 0);
+        //Robot.oi.getDriverJoystick().setRumble(RumbleType.kRightRumble, 0);
     }
 }

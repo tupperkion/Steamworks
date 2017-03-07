@@ -5,6 +5,7 @@ import org.usfirst.frc5506.Steamworks.RobotMap;
 import edu.wpi.first.wpilibj.AnalogGyro;
 import edu.wpi.first.wpilibj.SpeedController;
 import edu.wpi.first.wpilibj.command.Subsystem;
+import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 
 public class DriveTrain extends Subsystem {
     private final SpeedController driveLeft = RobotMap.driveTrainDriveLeft;
@@ -29,11 +30,19 @@ public class DriveTrain extends Subsystem {
     public void driveLeft(double speed) {
     	lastLeftSpeed = speed;
     	driveLeft.set(speed);
+        if (Math.abs(speed) >= 0.15)
+            Robot.oi.getDriverJoystick().setRumble(RumbleType.kLeftRumble, Math.abs(speed));
+        else
+            Robot.oi.getDriverJoystick().setRumble(RumbleType.kLeftRumble, 0);
     }
     
     public void driveRight(double speed) {
     	lastRightSpeed = speed;
     	driveRight.set(-speed);
+        if (Math.abs(speed) >= 0.15)
+            Robot.oi.getDriverJoystick().setRumble(RumbleType.kRightRumble, Math.abs(speed));
+        else
+            Robot.oi.getDriverJoystick().setRumble(RumbleType.kRightRumble, 0);
     }
     
     public void driveLeftCurved(double speed) {

@@ -104,8 +104,8 @@ public class Robot extends IterativeRobot {
         }
         autochooser = new SendableChooser<Command>();
         autochooser.addObject("Gear", new Auto());
-        autochooser.addDefault("Mobility", new Auto(true));
-        autochooser.addObject("Play dead", new Routine("SafeReset")); // at least safe reset the conveyer
+        autochooser.addObject("Mobility", new Auto(true));
+        autochooser.addDefault("Play dead", new Routine("SafeReset")); // at least safe reset the conveyer
         rumble = new SendableChooser<Boolean>();
         rumble.addDefault("Rumble On", true);
         rumble.addObject("Rumble Off", false);

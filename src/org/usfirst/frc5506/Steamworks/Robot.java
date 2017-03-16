@@ -41,8 +41,9 @@ public class Robot extends IterativeRobot {
     // 1 = left; 2 = center; 3 = right;
     public static byte starting = 1;
     // I technically don't need '<Byte>' here, but just for safety, I use it
-	public SendableChooser<Byte> pos;
-    public SendableChooser<Command> autochooser; // same for '<Command>' here
+	public static SendableChooser<Byte> pos;
+    public static SendableChooser<Command> autochooser; // same for '<Command>' here
+    public static SendableChooser<Boolean> rumble;
     
     public static int time = 0;
 
@@ -102,11 +103,16 @@ public class Robot extends IterativeRobot {
 	    		break;
         }
         autochooser = new SendableChooser<Command>();
-        autochooser.addDefault("Gear", new Auto());
-        autochooser.addObject("Mobility", new Auto(true));
+        autochooser.addObject("Gear", new Auto());
+        autochooser.addDefault("Mobility", new Auto(true));
         autochooser.addObject("Play dead", new Routine("SafeReset")); // at least safe reset the conveyer
+        rumble = new SendableChooser<Boolean>();
+        rumble.addDefault("Rumble On", true);
+        rumble.addObject("Rumble Off", false);
+        SmartDashboard.putData("Rumble", rumble);
         SmartDashboard.putData("Position", pos);
         SmartDashboard.putData("Routine", autochooser);
+        System.out.println("All systems go!");
     }
 
     /**

@@ -1,5 +1,6 @@
 package org.usfirst.frc5506.Steamworks.subsystems;
 
+import org.usfirst.frc5506.Steamworks.Robot;
 import org.usfirst.frc5506.Steamworks.RobotMap;
 
 import edu.wpi.first.wpilibj.AnalogGyro;
@@ -30,7 +31,7 @@ public class DriveTrain extends Subsystem {
     public void driveLeft(double speed) {
     	lastLeftSpeed = speed;
     	driveLeft.set(speed);
-        if (Math.abs(speed) >= 0.15)
+        if (Math.abs(speed) >= 0.15 && Robot.rumble.getSelected())
             Robot.oi.getDriverJoystick().setRumble(RumbleType.kLeftRumble, Math.abs(speed));
         else
             Robot.oi.getDriverJoystick().setRumble(RumbleType.kLeftRumble, 0);
@@ -39,7 +40,7 @@ public class DriveTrain extends Subsystem {
     public void driveRight(double speed) {
     	lastRightSpeed = speed;
     	driveRight.set(-speed);
-        if (Math.abs(speed) >= 0.15)
+        if (Math.abs(speed) >= 0.15 && Robot.rumble.getSelected())
             Robot.oi.getDriverJoystick().setRumble(RumbleType.kRightRumble, Math.abs(speed));
         else
             Robot.oi.getDriverJoystick().setRumble(RumbleType.kRightRumble, 0);

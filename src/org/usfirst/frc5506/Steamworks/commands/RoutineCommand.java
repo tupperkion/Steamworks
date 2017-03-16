@@ -153,24 +153,25 @@ public class RoutineCommand extends Command {
     	switch(command) {
     		case("turnto"):
     			double angle = Robot.driveTrain.getTurningAngle(arg);
+    			System.out.println("Turning by: " + angle);
     			if (Math.abs(angle) < 10) {
     				done = true;
     				Robot.driveTrain.driveArcade(0, 0);
     			} else if (Math.abs(angle) < 35) {
     				if (angle < 0) {
-    					Robot.driveTrain.driveLeftCurved(0.3);
+    					Robot.driveTrain.driveLeftCurved(0.6);
     					Robot.driveTrain.driveRight(0);
     				} else {
-    					Robot.driveTrain.driveRightCurved(0.3);
+    					Robot.driveTrain.driveRightCurved(0.6);
     					Robot.driveTrain.driveLeft(0);
     				}
     			} else {
     				if (angle < 0) {
-    					Robot.driveTrain.driveLeftCurved(0.5);
-    					Robot.driveTrain.driveRight(0);
+    					Robot.driveTrain.driveLeftCurved(0.6);
+    					Robot.driveTrain.driveRight(-0.6);
     				} else {
-    					Robot.driveTrain.driveRightCurved(0.5);
-    					Robot.driveTrain.driveLeft(0);
+    					Robot.driveTrain.driveRightCurved(0.6);
+    					Robot.driveTrain.driveLeft(-0.6);
     				}
     			}
     			break;
@@ -189,7 +190,7 @@ public class RoutineCommand extends Command {
     			Robot.conveyer.set(1);
     			if (!Robot.conveyer.conveyorPos && !timeoutSet) {
     				timeoutSet = true;
-    				setTimeout(5);
+    				setTimeout(8);
     			}
     			break;
 			default:

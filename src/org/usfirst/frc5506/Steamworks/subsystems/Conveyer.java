@@ -57,7 +57,7 @@ public class Conveyer extends Subsystem {
         else if (getSwitch())
         	conveyorPos = false;
         if (speed < 0 && conveyorPos)
-        	speed /= 2;
+        	speed /= 3;
         conveyer.set(speed);
     }
     

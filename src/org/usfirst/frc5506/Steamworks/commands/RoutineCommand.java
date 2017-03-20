@@ -83,6 +83,7 @@ public class RoutineCommand extends Command {
         command = split[0].toLowerCase();
         arg = split.length > 1 ? Double.valueOf(split[1]) : 0d;
         arg2 = split.length > 2 ? Double.valueOf(split[2]) : 0d;
+        System.out.println("Runninng: " + script + "(" + arg + ", " + arg2 + ")");
 
         // IT IS IMPERITIVE THAT COMMANDS THAT MOVE SOMETHING ARE ADDED HERE
         // otherwise, Routine will fight with Teleop, hindering proper operation
@@ -99,6 +100,7 @@ public class RoutineCommand extends Command {
 
     // Called just before this Command runs the first time
     protected void initialize() {
+    	done = false;
     	timeoutSet = false;
     	if (requiresConveyer)
         	Robot.conveyer.teleop = false;
@@ -119,11 +121,9 @@ public class RoutineCommand extends Command {
     			break;
     		case("curveleft"):
     			setTimeout(arg2);
-    			Robot.driveTrain.driveLeftCurved(arg);
     			break;
     		case("curveright"):
     			setTimeout(arg2);
-    			Robot.driveTrain.driveRightCurved(arg);
     			break;
     		case("runleft"):
     			setTimeout(arg2);
@@ -135,7 +135,7 @@ public class RoutineCommand extends Command {
     			break;
     		case("bumpconveyer"):
     			setTimeout(1);
-    			Robot.conveyer.set(1);
+    			Robot.conveyer.set(-1);
     		case("wait"):
     			setTimeout(arg);
     			break;
@@ -193,6 +193,12 @@ public class RoutineCommand extends Command {
     				setTimeout(8);
     			}
     			break;
+    		case("curveleft"):
+    			Robot.driveTrain.driveLeftCurved(arg);
+    			break;
+    		case("curveright"):
+    			Robot.driveTrain.driveRightCurved(arg);
+    			break;
 			default:
 				break;
     	}
@@ -213,6 +219,7 @@ public class RoutineCommand extends Command {
     		Robot.conveyer.set(0);
     		Robot.conveyer.teleop = true;
     	}
+        System.out.println("Finishing: " + command);
     }
 
     // Called when another command which requires one or more of the same

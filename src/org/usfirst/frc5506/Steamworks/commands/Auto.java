@@ -33,16 +33,17 @@ public class Auto extends CommandGroup {
     		selectedCommand.start();
     	}
     	if (skipGear) {
-    		switch(Robot.starting) {
+    		/*switch(Robot.starting) {
     			case(1):
     			case(3):
-    				addSequential(new Routine("/curveleft:-0.6:3;curveright:-0.6:3;stop"));
+    				addSequential(new Routine("/curveleft:-0.6:2;curveright:-0.6:2;driveright:-0.6:1;stop"));
     				break;
     			case(2):
     			default:
     				addSequential(new Routine("/curveleft:-0.7;1;curveright:-0.7:1;stop;turnto:45;/curveleft:-0.8:2;curveleft:-0.8:2;turnto:0;/curveleft:-0.8:2;curveright:-0.8:2;stop"));
     				break;
-    		}
+    		}*/
+    		addSequential(new Surge());
     	} else {
     		switch(Robot.starting) {
     			case(1):

@@ -10,7 +10,6 @@
 
 
 package org.usfirst.frc5506.Steamworks.commands;
-import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj.command.Command;
 import org.usfirst.frc5506.Steamworks.Robot;
 

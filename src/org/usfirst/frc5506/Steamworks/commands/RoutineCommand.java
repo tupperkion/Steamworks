@@ -8,8 +8,8 @@
 // update. Deleting the comments indicating the section will prevent
 // it from being updated in the future.
 
-
 package org.usfirst.frc5506.Steamworks.commands;
+
 import org.usfirst.frc5506.Steamworks.Robot;
 
 import edu.wpi.first.wpilibj.command.Command;
@@ -18,220 +18,119 @@ import edu.wpi.first.wpilibj.command.Command;
  * syntax: command1;command2;/command3:0.3;command4:/1:5;command5;...lastCommand
  * 
  * Use ":" to split arguments, e.g. "command:2:3" runs "command" with 2 as arg1 and 3 as arg2
- * 		For example, to run the RunLeft(speed, time) command with 1 as speed and 2 as time, "RunLeft:1:2"
- * Use ";" to seperate commands, e.g. to run "command1" then "command2", use "command1;command2"
- * Use "/" before a command to run in parallel, e.g. to run "command1",
- * 		then run "command2" and "command3" at the same time (after "command1"), use "command1;/command2:command3"
+ * For example, to run the RunLeft(speed, time) command with 1 as speed and 2 as time, "RunLeft:1:2"
  * 
- * 		Don't put "/" before your last command, there is no reason to.
+ * Use ";" to seperate commands, e.g. to run "command1"
+ * then "command2", use "command1;command2" Use "/" before a command to run in parallel, e.g. to run "command1", then run "command2" and "command3" at the same time (after "command1"), use "command1;/command2:command3"
+ * 
+ * Don't put "/" before your last command, there is no reason to.
  * 
  * Commands:
  * 
- * Drive(seconds)
- * 		Drives straight forward at full speed
- * TurnLeft(seconds)
- * 		Runs left motor back at full speed and right forwards at full speed
- * TurnRight(seconds)
- * 		Runs right motor back at full speed and left forwards at full speed
- * RunLeft(speed, time)
- * RunRight(speed, time)
- * CurveLeft(speed, time)
- * 		Runs the left motor, applying acceleration curve as necessary
- * CurveRight(speed, time)
- * 		Runs the right motor, applying acceleration curve as necessary
- * TurnTo(angle)
- * 		Runs one motor forwards to efficiently turn to a specific angle
- * Gear
- * 		Lines up and puts the gear on the peg
- * FlattenConveyer
- * 		Moves conveyer forwards into flattened position for depositing balls
- * ResetConveyer
- * 		Moves conveyer to middle limit switch
- * PushGear
- * 		Moves conveyer towards gear end (as far as it will go)
- * 		Sorry, too lazy to come up with a better name
- * BumpConveyer
- * 		Moves conveyer towards gear end for 1 second
- * SafeReset
- * 		Runs 'BumpConveyer;ResetConveyer'
- * 		Used to ensure safe position of conveyer belt when code is started
- * Wait(seconds)
- * 		Pauses
- * Stop
- * 		Stops driveTrain motors. DOES NOT STOP CONVEYER BELT.
- * 		Conveyer belt will be stopped anyway when relevant commands finish.
+ * 	Drive(power, time)
+ * 		Drive motors for `time` seconds.
+ * 	Run(left, right)
+ * 		Sets power of left and right motor, according to arguments. Command immediately ends.
+ * 	TurnLeft(power, angle)
+ *		Runs RIGHT motor until robot is `angle` degrees further LEFT. STOPS LEFT MOTOR.
+ * 	TurnRight(power, angle)
+ *		Runs RIGHT motor until robot is `angle` degrees further RIGHT. STOPS RIGHT MOTOR.
+ *	StopLeft(angle)
+ *		Waits until robot is at least `angle - 5` degrees further LEFT, then stops all motors.
+ *	StopRight(angle)
+ *		Waits until robot is at least `angle - 5` degrees further RIGHT, then stops all motors.
+ *	[Gear]
+ *		Deposits a gear, scanning left if vision iznt gud. Scans right instead if either of the following conditions are met:
+ *			 - Player Station is Blue1, Red1, or Red2 (note that Blue2 still scans left)
+ *			 - Driver Station position selector is set to "Left"
+ *	[PerfectGear]
+ *		Deposits a gear if vision iz gud, does nothing otherwise.
+ *	Stop
+ *		Waits 0.1 seconds and stops motors (workaround commands being slightly out of sync when run in parallel).
+ *	QuickStop
+ *		Stops motors immediately.
+ *	Wait(time)
+ *		Waits `time` seconds.
+ *
+ * Note: [command] denotes that command is implemented in Routine.java as a part of getCommand();
  * 
  * IMPORTANT: commands don't automatically stop DriveTrain motors!
- * Use the Stop command to stop motors!
+ * Use the Stop* command (or a Turn* command) to stop motors!
  */
 public class RoutineCommand extends Command {
-    private String command;
-    private double arg;
-    private double arg2;
-    private boolean requiresDriveTrain = false;
-    private boolean requiresConveyer = false;
-    
-    // used by some commands
-    private boolean timeoutSet = false;
-    
-    // this allows a command to stop during execute() so I don't need two switch statements, shortens code significantly
-    private boolean done = false;
-    
-    
-    public RoutineCommand(String script) {
-    	String[] split = script.split(":");
-        command = split[0].toLowerCase();
-        arg = split.length > 1 ? Double.valueOf(split[1]) : 0d;
-        arg2 = split.length > 2 ? Double.valueOf(split[2]) : 0d;
-        System.out.println("Runninng: " + script + "(" + arg + ", " + arg2 + ")");
-
-        // IT IS IMPERITIVE THAT COMMANDS THAT MOVE SOMETHING ARE ADDED HERE
-        // otherwise, Routine will fight with Teleop, hindering proper operation
-        if (command.equals("drive") || command.equals("turnleft") || command.equals("turnright") || command.equals("gear") ||
-        	command.equals("runleft") || command.equals("runright") || command.equals("curveleft") || command.equals("curveright"))
-        	requiresDriveTrain = true;
-        if (command.equals("flattenconveyer") || command.equals("resetconveyer") || command.equals("pushgear") || command.equals("bumpconveyer"))
-        	requiresConveyer = true;
-        //if (requiresDriveTrain)
-        //	requires(Robot.driveTrain);
-        if (requiresConveyer)
-        	requires(Robot.conveyer);
-    }
-
-    // Called just before this Command runs the first time
-    protected void initialize() {
-    	done = false;
-    	timeoutSet = false;
-    	if (requiresConveyer)
-        	Robot.conveyer.teleop = false;
-    	if (requiresDriveTrain)
-    		Robot.driveTrain.teleop = false;
-    	switch(command) {
-    		case("drive"):
-    			setTimeout(arg);
-    			Robot.driveTrain.driveArcade(1, 0);
-    			break;
-    		case("turnleft"):
-    			setTimeout(arg);
-    			Robot.driveTrain.driveArcade(0, 0.5);
-    			break;
-    		case("turnright"):
-    			setTimeout(arg);
-    			Robot.driveTrain.driveArcade(0, -0.5);
-    			break;
-    		case("curveleft"):
-    			setTimeout(arg2);
-    			break;
-    		case("curveright"):
-    			setTimeout(arg2);
-    			break;
-    		case("runleft"):
-    			setTimeout(arg2);
-    			Robot.driveTrain.driveLeft(arg);
-    			break;
-    		case("runright"):
-    			setTimeout(arg2);
-    			Robot.driveTrain.driveRight(arg);
-    			break;
-    		case("bumpconveyer"):
-    			setTimeout(1);
-    			Robot.conveyer.set(-1);
-    		case("wait"):
-    			setTimeout(arg);
-    			break;
-    		case("stop"):
-    			Robot.driveTrain.driveArcade(0, 0);
-    			done = true;
-    			break;
-    		default:
-    			break;
-    	}
-    }
-
-    // Called repeatedly when this Command is scheduled to run
-    protected void execute() {
-    	switch(command) {
-    		case("turnto"):
-    			double angle = Robot.driveTrain.getTurningAngle(arg);
-    			System.out.println("Turning by: " + angle);
-    			if (Math.abs(angle) < 10) {
-    				done = true;
-    				Robot.driveTrain.driveArcade(0, 0);
-    			} else if (Math.abs(angle) < 35) {
-    				if (angle < 0) {
-    					Robot.driveTrain.driveLeftCurved(0.6);
-    					Robot.driveTrain.driveRight(0);
-    				} else {
-    					Robot.driveTrain.driveRightCurved(0.6);
-    					Robot.driveTrain.driveLeft(0);
-    				}
-    			} else {
-    				if (angle < 0) {
-    					Robot.driveTrain.driveLeftCurved(0.6);
-    					Robot.driveTrain.driveRight(-0.6);
-    				} else {
-    					Robot.driveTrain.driveRightCurved(0.6);
-    					Robot.driveTrain.driveLeft(-0.6);
-    				}
-    			}
-    			break;
-    		case("flattenconveyer"):
-    			Robot.conveyer.set(-1);
-    			if (Robot.conveyer.conveyorPos && !timeoutSet) {
-    				timeoutSet = true;
-    				setTimeout(1);
-    			}
-    			break;
-    		case("resetconveyer"):
-    			Robot.conveyer.set(Robot.conveyer.conveyorPos ? 1 : -1);
-				done = Robot.conveyer.getSwitch();
+	// state variable to be used by commands
+	double n;
+	boolean done;
+	
+	String script;
+	double arg;
+	double arg2;
+	
+	public RoutineCommand(String script, double arg, double arg2) {
+		this.script = script;
+		this.arg = arg;
+		this.arg2 = arg2;
+	}
+	
+	public void initialize() {
+		// ensure that state variables are reset!
+		n = 0d;
+		done = false;
+		switch(script) {
+			case("drive"):
+				Robot.driveTrain.driveArcade(arg, 0);
+				setTimeout(arg2);
 				break;
-    		case("pushgear"):
-    			Robot.conveyer.set(1);
-    			if (!Robot.conveyer.conveyorPos && !timeoutSet) {
-    				timeoutSet = true;
-    				setTimeout(8);
-    			}
-    			break;
-    		case("curveleft"):
-    			Robot.driveTrain.driveLeftCurved(arg);
-    			break;
-    		case("curveright"):
-    			Robot.driveTrain.driveRightCurved(arg);
-    			break;
+			case("run"):
+				Robot.driveTrain.driveLeft(arg);
+				Robot.driveTrain.driveRight(arg2);
+				done = true;
+				break;
+			case("turnleft"):
+				Robot.driveTrain.driveLeft(0);
+				Robot.driveTrain.driveRight(0.6);
+				n = Robot.driveTrain.getGyro();
+				break;
+			case("turnright"):
+				Robot.driveTrain.driveLeft(0.6);
+				Robot.driveTrain.driveRight(0);
+			case("stopleft"):
+			case("stopright"):
+				n = Robot.driveTrain.getGyro();
+				break;
+			case("stop"):
+				setTimeout(0.1); // End the command in 0.1 seconds. Motors will stop when command ends.
+				break;
+			case("quickstop"):
+				done = true; // End the command immediately. Motors will stop when command ends.
+				break;
+			case("wait"):
+				setTimeout(arg);
+				break;
 			default:
+				System.err.println("script '" + script.toUpperCase() + "(" + arg + ", " + arg2 + ") not found!");
+				done = true;
 				break;
-    	}
-    }
+		}
+	}
+	
+	public void execute() {
+		switch(script) {
+			case("turnleft"):
+				done = n - Robot.driveTrain.getGyro() + arg <= 5;
+				break;
+			case("turnright"):
+				done = Robot.driveTrain.getGyro() - n + arg <= 5;
+				break;
+		}
+	}
 
-    // Make this return true when this Command no longer needs to run execute()
-    protected boolean isFinished() {
-        return done || isTimedOut() || (requiresConveyer && Robot.oi.getDriverJoystick().getRawButton(1));
-    }
-
-    // Called once after isFinished returns true
-    protected void end() {
-    	// notice the lack of "else" here
-    	// this allows a command to safely require both the DriveTrain and the Conveyer
-    	if (requiresDriveTrain)
-    		Robot.driveTrain.teleop = true;
-    	if (requiresConveyer) {
-    		Robot.conveyer.set(0);
-    		Robot.conveyer.teleop = true;
-    	}
-        System.out.println("Finishing: " + command);
-    }
-
-    // Called when another command which requires one or more of the same
-    // subsystems is scheduled to run
-    protected void interrupted() {
-    	// notice the lack of "else" here
-    	// this allows a command to safely require both the DriveTrain and the Conveyer
-    	if (requiresDriveTrain)
-    		Robot.driveTrain.teleop = true;
-    	if (requiresConveyer) {
-    		Robot.conveyer.set(0);
-    		Robot.conveyer.teleop = true;
-    	}
-    }
+	public boolean isFinished() {
+		return done || isTimedOut();
+	}
+	
+	public void end() {
+		if (script.contains("stop"))
+			Robot.driveTrain.driveArcade(0, 0);
+	}
 }

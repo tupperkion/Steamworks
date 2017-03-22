@@ -8,7 +8,6 @@
 // update. Deleting the comments indicating the section will prevent
 // it from being updated in the future.
 
-
 package org.usfirst.frc5506.Steamworks.commands;
 
 import org.usfirst.frc5506.Steamworks.Robot;
@@ -21,41 +20,27 @@ import edu.wpi.first.wpilibj.command.CommandGroup;
  */
 public class Auto extends CommandGroup {
 	public Command selectedCommand = null;
-	
-	public Auto() {
-		this(false);
+
+	// modes: 0 = gear, 1 = surge, 2 = play dead
+	public Auto(byte mode) {
+		switch(mode) {
+			case(0):
+				switch (Robot.starting) {
+					case (1):
+					case (3):
+						addSequential(new Routine("Drive:-0.5;0.5;Stop;Gear"));
+						break;
+					case (2):
+					default:
+						addSequential(new Gear(true));
+						break;
+				}
+				break;
+			case(1):
+				addSequential(new Surge());
+				break;
+			default:
+				break;
+		}
 	}
-	
-    public Auto(boolean skipGear) {
-    	// this should mean that conveyer is always safe
-    	if (selectedCommand != null) {
-    		addParallel(new Routine("SafeReset"));
-    		selectedCommand.start();
-    	}
-    	if (skipGear) {
-    		/*switch(Robot.starting) {
-    			case(1):
-    			case(3):
-    				addSequential(new Routine("/curveleft:-0.6:2;curveright:-0.6:2;driveright:-0.6:1;stop"));
-    				break;
-    			case(2):
-    			default:
-    				addSequential(new Routine("/curveleft:-0.7;1;curveright:-0.7:1;stop;turnto:45;/curveleft:-0.8:2;curveleft:-0.8:2;turnto:0;/curveleft:-0.8:2;curveright:-0.8:2;stop"));
-    				break;
-    		}*/
-    		addSequential(new Surge());
-    	} else {
-    		switch(Robot.starting) {
-    			case(1):
-    			case(3):
-    				addSequential(new Routine("/curveleft:-0.5:1;curveright:-0.5:1;stop"));
-    				addSequential(new Gear(true));
-    				break;
-    			case(2):
-    			default:
-    				addSequential(new Gear(true));
-    				break;
-    		}
-    	}
-    } 
 }

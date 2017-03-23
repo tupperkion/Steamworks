@@ -163,5 +163,9 @@ public class Robot extends IterativeRobot {
 
 		// update selectors and pray the DS is still alive to make these choices...
 		starting = pos.getSelected();
+		
+		// push gyro data in case camera mount falls (also useful for debugging)
+		// normally gyro data is inverted as robot starts backwards when powered on, so the "+ 180" flips it
+		SmartDashboard.putNumber("Heading", (Robot.driveTrain.getGyro() + 180) % 360);
 	}
 }

@@ -20,12 +20,11 @@ public class Teleop extends Command {
 	// kill switch control
 	public boolean enabled = true;
 
-	// "true" removes tank drive functionality, and switches to arcade drive via
-	// j1
+	// "true" removes tank drive functionality, and switches to arcade drive via j1
 	public boolean j1arcade = false;
 
-	// was "a" pressed in the previous tick?
-	public boolean aWasPressed = false;
+	// was "LB" pressed in the previous tick?
+	public boolean lbWasPressed = false;
 
 	public boolean fullPower = false;
 
@@ -36,11 +35,11 @@ public class Teleop extends Command {
 	// Called repeatedly when this Command is scheduled to run
 	protected void execute() {
 		// speed toggle
-		if (!aWasPressed && Robot.oi.getFunctionJoystick().getRawButton(1)) { // A
-			aWasPressed = true;
+		if (!lbWasPressed && Robot.oi.getFunctionJoystick().getRawButton(5)) { // LB
+			lbWasPressed = true;
 			fullPower = !fullPower;
-		} else if (aWasPressed && !Robot.oi.getFunctionJoystick().getRawButton(1)) {
-			aWasPressed = false;
+		} else if (lbWasPressed && !Robot.oi.getFunctionJoystick().getRawButton(5)) {
+			lbWasPressed = false;
 		}
 
 		if (Robot.oi.getFunctionJoystick().getRawButton(2)) // B

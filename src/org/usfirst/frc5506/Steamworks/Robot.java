@@ -150,12 +150,12 @@ public class Robot extends IterativeRobot {
 		// if Pi hasn't responded for a second, it's probably dead
 		// Pi "responds" by setting "true" to "Pi" every time it processes a frame
 		SmartDashboard.putBoolean("Pi", time < 50);
-		if (Vision.isalive()) {
+		if (Vision.table.getBoolean("running", false)) {
 			time = 0;
 			Vision.table.putBoolean("running", false);
 		} else
 			time++;
-		if (Vision.izgud() && !Vision.isalive()) {
+		if (Vision.izgud() && !Vision.table.getBoolean("running", false)) {
 			// clearly the Pi isn't on to target the peg
 			Vision.table.putBoolean("sight", false);
 		}
@@ -167,5 +167,13 @@ public class Robot extends IterativeRobot {
 		// push gyro data in case camera mount falls (also useful for debugging)
 		// normally gyro data is inverted as robot starts backwards when powered on, so the "+ 180" flips it
 		SmartDashboard.putNumber("Heading", (Robot.driveTrain.getGyro() + 180) % 360);
+		// push vision data for ease of lining up and debugging
+		if (Vision.izgud()) {
+			SmartDashboard.putNumber("Vision", Vision.getTurningAngle());
+			SmartDashboard.putNumber("Distance", Vision.getDistance());
+		} else {
+			SmartDashboard.putNumber("Vision", 0);
+			SmartDashboard.putNumber("Distance", 0);
+		}
 	}
 }

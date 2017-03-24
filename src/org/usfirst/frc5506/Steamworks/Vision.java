@@ -22,7 +22,7 @@ public class Vision {
 
 	// is the vision code ready and running?
 	public static boolean isalive() {
-		return table.getBoolean("running", false);
+		return Robot.time < 50;
 	}
 
 	// can the camera see and ID the tape?

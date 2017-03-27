@@ -11,15 +11,22 @@
 package org.usfirst.frc5506.Steamworks.commands;
 
 import edu.wpi.first.wpilibj.command.Command;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+
 import org.usfirst.frc5506.Steamworks.Robot;
 
 /**
- *
+ * Current mappings:
+ * 
+ * Sticks	Drive
+ * LB		Toggle speed
+ * A		Kill routines
+ * B		Start climbing
+ * X		Stop climbing
+ * B + X	Rewind climber
+ * Y		Auto gear
  */
 public class Teleop extends Command {
-	// kill switch control
-	public boolean enabled = true;
-
 	// "true" removes tank drive functionality, and switches to arcade drive via j1
 	public boolean j1arcade = false;
 
@@ -35,16 +42,20 @@ public class Teleop extends Command {
 	// Called repeatedly when this Command is scheduled to run
 	protected void execute() {
 		// speed toggle
-		if (!lbWasPressed && Robot.oi.getFunctionJoystick().getRawButton(5)) { // LB
+		if (!lbWasPressed && Robot.oi.getDriverJoystick().getRawButton(5)) { // LB
 			lbWasPressed = true;
 			fullPower = !fullPower;
-		} else if (lbWasPressed && !Robot.oi.getFunctionJoystick().getRawButton(5)) {
+		} else if (lbWasPressed && !Robot.oi.getDriverJoystick().getRawButton(5)) {
 			lbWasPressed = false;
 		}
+		SmartDashboard.putBoolean("Power", fullPower);
 
-		if (Robot.oi.getFunctionJoystick().getRawButton(2)) // B
+		if (Robot.oi.getDriverJoystick().getRawButton(2) && // B
+			Robot.oi.getDriverJoystick().getRawButton(3)) // X
+			Robot.climber.set(-0.2);
+		else if (Robot.oi.getDriverJoystick().getRawButton(2)) // B
 			Robot.climber.set(1);
-		else if (Robot.oi.getFunctionJoystick().getRawButton(3)) // X
+		else if (Robot.oi.getDriverJoystick().getRawButton(3)) // X
 			Robot.climber.set(0);
 		if (j1arcade) {
 			double x = Robot.oi.getFunctionJoystick().getX() / (fullPower ? 1 : 2);

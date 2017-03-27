@@ -126,7 +126,7 @@ public class RoutineCommand extends Command {
 	}
 
 	public boolean isFinished() {
-		return done || isTimedOut();
+		return Robot.oi.getDriverJoystick().getRawButton(1) || done || isTimedOut();
 	}
 	
 	public void end() {

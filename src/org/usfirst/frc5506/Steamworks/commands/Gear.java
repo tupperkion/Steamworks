@@ -77,7 +77,7 @@ public class Gear extends Command {
 	}
 
 	public boolean isFinished() {
-		return isTimedOut() || !Vision.isalive() || (!scan && !found);
+		return Robot.oi.getDriverJoystick().getRawButton(1) || isTimedOut() || !Vision.isalive() || (!scan && !found);
 	}
 	
 	public void end() {

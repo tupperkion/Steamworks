@@ -175,5 +175,6 @@ public class Robot extends IterativeRobot {
 			SmartDashboard.putNumber("Vision", 0);
 			SmartDashboard.putNumber("Distance", 0);
 		}
+		// "Power" readout is found in Teleop class
 	}
 }

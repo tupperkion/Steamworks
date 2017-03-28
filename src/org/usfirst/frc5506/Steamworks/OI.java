@@ -74,6 +74,7 @@ public class OI {
 		return driverJoystick;
 	}
 
+	@Deprecated
 	public Joystick getFunctionJoystick() {
 		return functionJoystick;
 	}

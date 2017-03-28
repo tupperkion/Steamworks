@@ -155,7 +155,7 @@ public class Robot extends IterativeRobot {
 			Vision.table.putBoolean("running", false);
 		} else
 			time++;
-		if (Vision.izgud() && !Vision.table.getBoolean("running", false)) {
+		if (Vision.izgud() && !Vision.isalive()) {
 			// clearly the Pi isn't on to target the peg
 			Vision.table.putBoolean("sight", false);
 		}

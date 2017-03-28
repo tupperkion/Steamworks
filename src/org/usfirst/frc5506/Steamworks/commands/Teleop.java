@@ -28,12 +28,13 @@ import org.usfirst.frc5506.Steamworks.Robot;
  */
 public class Teleop extends Command {
 	// "true" removes tank drive functionality, and switches to arcade drive via j1
-	public boolean j1arcade = false;
+	//public boolean j1arcade = false;
 
 	// was "LB" pressed in the previous tick?
 	public boolean lbWasPressed = false;
-
 	public boolean fullPower = false;
+	// "true" adds a 15% dead zone in the middle of the controller to ensure joysticks rest in non-motor-moving position
+	public boolean deadZone = true;
 
 	public Teleop() {
 		requires(Robot.driveTrain);
@@ -50,6 +51,7 @@ public class Teleop extends Command {
 		}
 		SmartDashboard.putBoolean("Power", fullPower);
 
+		// climber
 		if (Robot.oi.getDriverJoystick().getRawButton(2) && // B
 			Robot.oi.getDriverJoystick().getRawButton(3)) // X
 			Robot.climber.set(-0.2);
@@ -57,20 +59,22 @@ public class Teleop extends Command {
 			Robot.climber.set(1);
 		else if (Robot.oi.getDriverJoystick().getRawButton(3)) // X
 			Robot.climber.set(0);
-		if (j1arcade) {
+
+		// drive base
+		/*if (j1arcade) {
 			double x = Robot.oi.getFunctionJoystick().getX() / (fullPower ? 1 : 2);
 			double y = -Robot.oi.getFunctionJoystick().getY() / (fullPower ? 1 : 2);
 			Robot.driveTrain.driveArcade(y, x);
-		} else {
+		} else {*/
 			// left axis = 1, right axis = 5
 			double leftSpeed = -Robot.oi.getDriverJoystick().getRawAxis(1);
 			double rightSpeed = -Robot.oi.getDriverJoystick().getRawAxis(5);
 			if (Robot.driveTrain.teleop) {
-				Robot.driveTrain.driveLeftCurved(Math.abs(leftSpeed) > 0.15 ? leftSpeed * (fullPower ? 1 : 0.75) : 0);
+				Robot.driveTrain.driveLeftCurved(!deadZone || Math.abs(leftSpeed) > 0.15 ? leftSpeed * (fullPower ? 1 : 0.75) : 0);
 				Robot.driveTrain
-						.driveRightCurved(Math.abs(rightSpeed) > 0.15 ? rightSpeed * (fullPower ? 1 : 0.75) : 0);
+						.driveRightCurved(!deadZone || Math.abs(rightSpeed) > 0.15 ? rightSpeed * (fullPower ? 1 : 0.75) : 0);
 			}
-		}
+		//}
 	}
 
 	// Make this return true when this Command no longer needs to run execute()

@@ -23,7 +23,7 @@ public class Climber extends Subsystem {
 	private final SpeedController climber = RobotMap.climberClimber;
 
 	public void set(double speed) {
-		climber.set(-speed);
+		climber.set(speed);
 	}
 
 	public void initDefaultCommand() {}

@@ -85,7 +85,7 @@ public class Robot extends IterativeRobot {
 		autochooser = new SendableChooser<Command>();
 		autochooser.addObject("Gear", new Auto((byte) 0));
 		autochooser.addObject("Mobility", new Auto((byte) 1));
-		autochooser.addDefault("Play dead", new Auto((byte) 2)); // at least safe reset the conveyer
+		autochooser.addDefault("Play dead", new Auto((byte) 1)); // at least safe reset the conveyer
 		rumble = new SendableChooser<Boolean>();
 		rumble.addDefault("Rumble On", true);
 		rumble.addObject("Rumble Off", false);
@@ -170,10 +170,15 @@ public class Robot extends IterativeRobot {
 		// push vision data for ease of lining up and debugging
 		if (Vision.izgud()) {
 			SmartDashboard.putNumber("Vision", Vision.getTurningAngle());
+			//Vision.getTurningAngle();
 			SmartDashboard.putNumber("Distance", Vision.getDistance());
+			SmartDashboard.putNumber("Camera distance", Vision.getCameraDistance());
+			SmartDashboard.putNumber("Camera angle", Math.toDegrees(Vision.getCameraAngle()));
 		} else {
 			SmartDashboard.putNumber("Vision", 0);
 			SmartDashboard.putNumber("Distance", 0);
+			SmartDashboard.putNumber("Camera distance", 0);
+			SmartDashboard.putNumber("Camera angle", 0);
 		}
 		// "Power" readout is found in Teleop class
 	}

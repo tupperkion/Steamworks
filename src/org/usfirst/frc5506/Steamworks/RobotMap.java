@@ -38,7 +38,7 @@ public class RobotMap {
 		driveTrainDriveRight = new VictorSP(2);
 		LiveWindow.addActuator("DriveTrain", "DriveRight", (VictorSP) driveTrainDriveRight);
 
-		driveTrainGyro = new AnalogGyro(0);
+		driveTrainGyro = new AnalogGyro(1);
 		LiveWindow.addSensor("DriveTrain", "Gyro", driveTrainGyro);
 		driveTrainGyro.setSensitivity(0.007);
 		climberClimber = new Spark(3);

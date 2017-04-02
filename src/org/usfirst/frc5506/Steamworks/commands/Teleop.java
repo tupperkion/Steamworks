@@ -32,7 +32,7 @@ public class Teleop extends Command {
 
 	// was "LB" pressed in the previous tick?
 	public boolean lbWasPressed = false;
-	public boolean fullPower = false;
+	public boolean fullPower = true;
 	// "true" adds a 15% dead zone in the middle of the controller to ensure joysticks rest in non-motor-moving position
 	public boolean deadZone = true;
 
@@ -52,9 +52,11 @@ public class Teleop extends Command {
 		SmartDashboard.putBoolean("Power", fullPower);
 
 		// climber
-		if (Robot.oi.getDriverJoystick().getRawButton(2) && // B
+		if (Robot.oi.getDriverJoystick().getRawButton(6))
+			Robot.climber.set(-0.5);
+		else if (Robot.oi.getDriverJoystick().getRawButton(2) && // B
 			Robot.oi.getDriverJoystick().getRawButton(3)) // X
-			Robot.climber.set(-0.2);
+			Robot.climber.set(0.5);
 		else if (Robot.oi.getDriverJoystick().getRawButton(2)) // B
 			Robot.climber.set(1);
 		else if (Robot.oi.getDriverJoystick().getRawButton(3)) // X

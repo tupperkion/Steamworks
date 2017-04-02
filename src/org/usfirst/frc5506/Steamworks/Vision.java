@@ -22,12 +22,12 @@ public class Vision {
 
 	// is the vision code ready and running?
 	public static boolean isalive() {
-		return Robot.time < 50;
+		return (table != null) && Robot.time < 50;
 	}
 
 	// can the camera see and ID the tape?
 	public static boolean izgud() {
-		return table.getBoolean("izgud", false) && isalive();
+		return (table != null) && table.getBoolean("izgud", false) && isalive();
 	}
 
 	public static double getCameraDistance() {
@@ -39,14 +39,14 @@ public class Vision {
 	}
 
 	public static double getCameraAngle() {
-		return getError() / cameraWidth * cameraFOV + 0.5 * Math.PI;
+		return getError() / cameraWidth * cameraFOV;
 	}
 
 	// distance from gear to robot
 	public static double getDistance() {
 		double a = getCameraDistance();
-		double B = getCameraAngle();
-		return Math.sqrt(Math.pow(a, 2) + Math.pow(c, 2) + 2 * a * c * Math.cos(B));
+		double B = Math.PI / 2 + getCameraAngle();
+		return Math.sqrt((a * a) + (c * c) - (2 * a * c * Math.cos(B)));
 	}
 
 	/**
@@ -58,11 +58,12 @@ public class Vision {
 	 */
 	public static double getTurningAngle(double distance) {
 		double a = getCameraDistance();
-		double B = getCameraAngle();
+		double B = Math.PI / 2 + getCameraAngle();
+		//return Math.toDegrees(B);
 		double b = distance;
 		if (a <= c)
-			return 90 - Math.toDegrees(Math.asin(a * (Math.sin(B) / b)));
-		return 90 - Math.toDegrees(B - Math.asin(c * (Math.sin(B) / b)));
+			return 90 - Math.toDegrees(Math.asin(Math.sin(B) / b * a));
+		return 90 - 180 + Math.toDegrees(B + Math.asin(Math.sin(B) / b * c));
 	}
 
 	/**

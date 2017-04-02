@@ -8,16 +8,27 @@ import edu.wpi.first.wpilibj.command.Command;
  *
  */
 public class Surge extends Command {
-
+	public boolean gear;
+	
 	public Surge() {
 		// Use requires() here to declare subsystem dependencies
 		// eg. requires(chassis);
+		this(false);
+	}
+	
+	public Surge(boolean gear) {
+		this.gear = gear;
 	}
 
 	// Called just before this Command runs the first time
 	protected void initialize() {
-		setTimeout(2);
-		Robot.driveTrain.driveArcade(-0.6, 0);
+		if (gear) {
+			setTimeout(0.25);
+			Robot.driveTrain.driveArcade(0.4, 0);
+		} else {
+			setTimeout(2);
+			Robot.driveTrain.driveArcade(-0.6, 0);
+		}
 	}
 
 	// Called repeatedly when this Command is scheduled to run

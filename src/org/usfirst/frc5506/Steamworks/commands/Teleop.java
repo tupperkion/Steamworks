@@ -64,7 +64,8 @@ public class Teleop extends Command {
 		else if (Robot.oi.getDriverJoystick().getRawButton(3)) // X
 			Robot.climber.set(-0.5);
 		else
-			Robot.climber.set(0);
+			Robot.climber.set(Robot.oi.getDriverJoystick.getRawAxis(2) -
+				Robot.oi.getDriverJoystick.getRawAxis(3));
 
 		// drive base
 		/*if (j1arcade) {

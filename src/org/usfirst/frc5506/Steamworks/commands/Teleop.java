@@ -17,14 +17,19 @@ import org.usfirst.frc5506.Steamworks.Robot;
 
 /**
  * Current mappings:
- * 
+ *
  * Sticks	Drive
- * LB		Toggle speed
- * A		Kill routines
- * B		Start climbing
- * X		Stop climbing
- * B + X	Rewind climber
- * Y		Auto gear
+ * LB		Toggle speed (100% or 50%, reflected by "Power" light in SmartDashboard, green = 100%)
+ *
+ * RB		Climb (100%)
+ * B		Climb (50%, use when at top of touch pad to hold position, just tap the button repeatedly)
+ *
+ * The following will always be mapped, but aren't likely to be used during comp
+ *
+ * A		Kill routines (may become useful if routines become used during teleop)
+ * Y		Auto gear (primarily for testing purposes,
+ *			can be used during comp if "Pi" and "Sight" on SmartDashboard are BOTH green)
+ * X		Reverse climber (50%, to be used during demonstrations and testing, not during comp)
  */
 public class Teleop extends Command {
 	// "true" removes tank drive functionality, and switches to arcade drive via j1
@@ -52,14 +57,13 @@ public class Teleop extends Command {
 		SmartDashboard.putBoolean("Power", fullPower);
 
 		// climber
-		if (Robot.oi.getDriverJoystick().getRawButton(6))
-			Robot.climber.set(-0.5);
-		else if (Robot.oi.getDriverJoystick().getRawButton(2) && // B
-			Robot.oi.getDriverJoystick().getRawButton(3)) // X
-			Robot.climber.set(0.5);
-		else if (Robot.oi.getDriverJoystick().getRawButton(2)) // B
+		if (Robot.oi.getDriverJoystick().getRawButton(6)) // RB
 			Robot.climber.set(1);
+		else if (Robot.oi.getDriverJoystick().getRawButton(2)) // B
+			Robot.climber.set(0.5);
 		else if (Robot.oi.getDriverJoystick().getRawButton(3)) // X
+			Robot.climber.set(-0.5);
+		else
 			Robot.climber.set(0);
 
 		// drive base

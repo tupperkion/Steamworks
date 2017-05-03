@@ -10,12 +10,14 @@ Controls subject to change based on driver preference.
 Drive robot (tank drive)
 ### Left Bumper
 Toggle speed (between 100% (default) and 50%, reflected by green "Power" indicator on SmartDashboard)
+
 ---
 ### Right Bumper
 Climb (100% power)
 ### `B`
 Climb (50% power)
 > Use to hold position at top of touch pad
+
 ---
 *The following controls will always be mapped to the controller, but aren't likely to be used at competition:*
 ### `A`

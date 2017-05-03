@@ -72,9 +72,9 @@ public class Teleop extends Command {
 			double leftSpeed = -Robot.oi.getDriverJoystick().getRawAxis(1);
 			double rightSpeed = -Robot.oi.getDriverJoystick().getRawAxis(5);
 			if (Robot.driveTrain.teleop) {
-				Robot.driveTrain.driveLeftCurved(!deadZone || Math.abs(leftSpeed) > 0.15 ? leftSpeed * (fullPower ? 1 : 0.75) : 0);
+				Robot.driveTrain.driveLeftCurved(!deadZone || Math.abs(leftSpeed) > 0.15 ? leftSpeed * (fullPower ? 1 : 0.5) : 0);
 				Robot.driveTrain
-						.driveRightCurved(!deadZone || Math.abs(rightSpeed) > 0.15 ? rightSpeed * (fullPower ? 1 : 0.75) : 0);
+						.driveRightCurved(!deadZone || Math.abs(rightSpeed) > 0.15 ? rightSpeed * (fullPower ? 1 : 0.5) : 0);
 			}
 		//}
 	}

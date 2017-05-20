@@ -1,61 +1,41 @@
 package org.usfirst.frc5506.Steamworks;
 
-import org.usfirst.frc5506.Steamworks.commands.Auto;
-import org.usfirst.frc5506.Steamworks.commands.Teleop;
-import org.usfirst.frc5506.Steamworks.subsystems.Climber;
-import org.usfirst.frc5506.Steamworks.subsystems.DriveTrain;
-
-import edu.wpi.first.wpilibj.CameraServer;
-import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.IterativeRobot;
+import edu.wpi.first.wpilibj.*;
 import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.command.Scheduler;
 import edu.wpi.first.wpilibj.livewindow.LiveWindow;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import org.usfirst.frc5506.Steamworks.auto.Auto;
+import org.usfirst.frc5506.Steamworks.subsystems.Climber;
+import org.usfirst.frc5506.Steamworks.subsystems.DriveTrain;
 
-/**
- * The VM is configured to automatically run this class, and to call the
- * functions corresponding to each mode, as described in the IterativeRobot
- * documentation. If you change the name of this class or the package after
- * creating this project, you must also update the manifest file in the resource
- * directory.
- */
 public class Robot extends IterativeRobot {
-
-	Command auto;
-	Command teleop;
+	public Command auto;
 
 	// 1 = left; 2 = center; 3 = right; hey I guessed this right!
 	public static byte starting = 1;
+	/** Starting position on field */
 	public static SendableChooser<Byte> pos;
+	/** Chosen auto routine */
 	public static SendableChooser<Command> autochooser;
+	/** Some drivers may prefer rumble to be off, hence the toggle */
 	public static SendableChooser<Boolean> rumble;
 
-	public static int time = 0;
-
-	public static OI oi;
 	public static DriveTrain driveTrain;
 	public static Climber climber;
 
-	/**
-	 * This function is run when the robot is first started up and should be
-	 * used for any initialization code.
-	 */
+	public static Joystick joystick = new Joystick(0);
+
 	public void robotInit() {
-		RobotMap.init();
 		driveTrain = new DriveTrain();
 		climber = new Climber();
 
-		// OI must be constructed after subsystems. If the OI creates Commands
-		// (which it very likely will), subsystems are not guaranteed to be
-		// constructed yet. Thus, their requires() statements may grab null
-		// pointers. Bad news. Don't move it.
-		oi = new OI();
+		LiveWindow.addActuator("DriveTrain", "Left", (VictorSP) driveTrain.left);
+		LiveWindow.addActuator("DriveTrain", "Right", (VictorSP) driveTrain.right);
+		LiveWindow.addActuator("Climber", "Climber", (Spark) climber.climber);
+		LiveWindow.addSensor("DriveTrain", "Gyro", driveTrain.gyro);
 
-		// instantiate the command used for the autonomous period
-
-		teleop = new Teleop();
 		Vision.init();
 		// front camera (rope climber end)
 		CameraServer.getInstance().startAutomaticCapture(0).setExposureManual(40);
@@ -63,54 +43,50 @@ public class Robot extends IterativeRobot {
 		CameraServer.getInstance().startAutomaticCapture(1).setExposureManual(50);
 		driveTrain.gyro.calibrate();
 		starting = (byte) DriverStation.getInstance().getLocation();
-		pos = new SendableChooser<Byte>();
+		pos = new SendableChooser<>();
 		switch (starting) {
-		case (1):
-			pos.addDefault("Left", (byte) 1);
-			pos.addObject("Center", (byte) 2);
-			pos.addObject("Right", (byte) 3);
-			break;
-		case (3):
-			pos.addObject("Left", (byte) 1);
-			pos.addObject("Center", (byte) 2);
-			pos.addDefault("Right", (byte) 3);
-			break;
-		case (2):
-		default: // 'Center' is a safe bet.... right?
-			pos.addObject("Left", (byte) 1);
-			pos.addDefault("Center", (byte) 2);
-			pos.addObject("Right", (byte) 3);
-			break;
+			case (1):
+				pos.addDefault("Left", (byte) 1);
+				pos.addObject("Center", (byte) 2);
+				pos.addObject("Right", (byte) 3);
+				break;
+			case (3):
+				pos.addObject("Left", (byte) 1);
+				pos.addObject("Center", (byte) 2);
+				pos.addDefault("Right", (byte) 3);
+				break;
+			case (2):
+			default: // 'Center' is a safe bet.... right?
+				pos.addObject("Left", (byte) 1);
+				pos.addDefault("Center", (byte) 2);
+				pos.addObject("Right", (byte) 3);
+				break;
 		}
-		autochooser = new SendableChooser<Command>();
+		autochooser = new SendableChooser<>();
 		autochooser.addObject("Gear", new Auto((byte) 0));
 		autochooser.addObject("Mobility", new Auto((byte) 1));
 		autochooser.addDefault("Play dead", new Auto((byte) 1)); // at least safe reset the conveyer
-		rumble = new SendableChooser<Boolean>();
+		rumble = new SendableChooser<>();
 		rumble.addDefault("Rumble On", true);
 		rumble.addObject("Rumble Off", false);
 		SmartDashboard.putData("Rumble", rumble);
 		SmartDashboard.putData("Position", pos);
 		SmartDashboard.putData("Routine", autochooser);
 		System.out.println("All systems go!");
+
+		// default indicators
+		SmartDashboard.putBoolean("power", fullPower);
 	}
 
-	/**
-	 * This function is called when the disabled button is hit. You can use it
-	 * to reset subsystems before shutting down.
-	 */
 	public void disabledInit() {
-		Robot.driveTrain.driveArcade(0, 0);
-		Robot.climber.set(0);
+		driveTrain.drive(0, 0);
+		climber.set(0);
 	}
 
 	public void disabledPeriodic() {
 		Scheduler.getInstance().run();
 	}
 
-	/**
-	 * This function is called periodically during autonomous
-	 */
 	public void autonomousPeriodic() {
 		Scheduler.getInstance().run();
 	}
@@ -118,18 +94,6 @@ public class Robot extends IterativeRobot {
 	public void teleopInit() {
 		if (auto != null)
 			auto.cancel();
-		if (teleop != null)
-			teleop.start();
-	}
-
-	/**
-	 * This function is called periodically during operator control
-	 */
-	public void teleopPeriodic() {
-		Scheduler.getInstance().run();
-		// if (Vision.izgud())
-		// System.out.println(Vision.getDistance() + "\t" +
-		// Vision.getTurningAngle());
 	}
 
 	/**
@@ -139,6 +103,9 @@ public class Robot extends IterativeRobot {
 		LiveWindow.run();
 	}
 
+	/**
+	 * Picks auto routine from autochooser and starts it
+	 */
 	public void autonomousInit() {
 		auto = autochooser.getSelected();
 		starting = pos.getSelected();
@@ -146,6 +113,12 @@ public class Robot extends IterativeRobot {
 			auto.start();
 	}
 
+	/** time / 20ms since last frame from rPi */
+	public static int time = 0;
+
+	/**
+	 * Updates smartdashboard values and verifies status of rPi
+	 */
 	public void robotPeriodic() {
 		// if Pi hasn't responded for a second, it's probably dead
 		// Pi "responds" by setting "true" to "Pi" every time it processes a frame
@@ -163,10 +136,10 @@ public class Robot extends IterativeRobot {
 
 		// update selectors and pray the DS is still alive to make these choices...
 		starting = pos.getSelected();
-		
+
 		// push gyro data in case camera mount falls (also useful for debugging)
 		// normally gyro data is inverted as robot starts backwards when powered on, so the "+ 180" flips it
-		SmartDashboard.putNumber("Heading", (Robot.driveTrain.getGyro() + 180) % 360);
+		SmartDashboard.putNumber("Heading", (driveTrain.getGyro() + 180) % 360);
 		// push vision data for ease of lining up and debugging
 		if (Vision.izgud()) {
 			SmartDashboard.putNumber("Vision", Vision.getTurningAngle());
@@ -180,6 +153,72 @@ public class Robot extends IterativeRobot {
 			SmartDashboard.putNumber("Camera distance", 0);
 			SmartDashboard.putNumber("Camera angle", 0);
 		}
-		// "Power" readout is found in Teleop class
+		// report power setting
+		SmartDashboard.putBoolean("Power", fullPower);
+	}
+
+	////////////
+	// Teleop //
+	////////////
+
+	private boolean lbWasPressed = false;
+	/** "true" = 100% power (competition mode), "false" = 50% power (demonstration/small space mode) */
+	private boolean fullPower = true;
+	/** "true" adds a 15% dead zone in the middle of the controller to ensure joysticks rest in non-motor-moving position */
+	private boolean deadZone = true;
+
+	/**
+	 * Current mappings:
+	 *
+	 * Sticks	Drive
+	 * LB		Toggle speed (100% or 50%, reflected by "Power" light in SmartDashboard, green = 100%)
+	 *
+	 * RB		Climb (100%)
+	 * B		Climb (50%, use when at top of touch pad to hold position, just tap the button repeatedly)
+	 *
+	 * The following will always be mapped, but aren't likely to be used during comp
+	 *
+	 * A		Kill routines (may become useful if routines become used during teleop)
+	 * Y		Auto gear (primarily for testing purposes,
+	 *			can be used during comp if "Pi" and "Sight" on SmartDashboard are BOTH green)
+	 * X		Reverse climber (50%, to be used during demonstrations and testing, not during comp)
+	 */
+	public void teleopPeriodic() {
+		Scheduler.getInstance().run(); // just in case a Command is running...
+
+		// speed toggle
+		if (!lbWasPressed && joystick.getRawButton(5)) { // LB
+			lbWasPressed = true;
+			fullPower = !fullPower;
+		} else if (lbWasPressed && !joystick.getRawButton(5)) {
+			lbWasPressed = false;
+		}
+
+		// climber
+		if (joystick.getRawButton(6)) // RB
+			climber.set(1);
+		else if (joystick.getRawButton(2)) // B
+			climber.set(0.5);
+		else if (joystick.getRawButton(3)) // X
+			climber.set(-0.5);
+		else
+			climber.set(joystick.getRawAxis(2) -
+							joystick.getRawAxis(3));
+
+		// drive base
+		/*if (j1arcade) {
+			double x = oi.getFunctionJoystick().getX() / (fullPower ? 1 : 2);
+			double y = -oi.getFunctionJoystick().getY() / (fullPower ? 1 : 2);
+			driveTrain.driveArcade(y, x);
+		} else {*/
+		// left axis = 1, right axis = 5
+		double leftSpeed = -joystick.getRawAxis(1);
+		double rightSpeed = -joystick.getRawAxis(5);
+		if (driveTrain.teleop) {
+			driveTrain.driveLeftCurved(!deadZone || Math.abs(leftSpeed) > 0.15 ? leftSpeed * (fullPower ? 1 : 0.5) : 0);
+			driveTrain
+				.driveRightCurved(!deadZone || Math.abs(rightSpeed) > 0.15 ? rightSpeed * (fullPower ? 1 : 0.5) : 0);
+		}
+		//}
 	}
 }

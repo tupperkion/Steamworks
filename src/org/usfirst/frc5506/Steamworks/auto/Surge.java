@@ -1,21 +1,18 @@
-package org.usfirst.frc5506.Steamworks.commands;
+package org.usfirst.frc5506.Steamworks.auto;
 
 import org.usfirst.frc5506.Steamworks.Robot;
 
 import edu.wpi.first.wpilibj.command.Command;
 
-/**
- *
- */
 public class Surge extends Command {
 	public boolean gear;
-	
+
 	public Surge() {
 		// Use requires() here to declare subsystem dependencies
 		// eg. requires(chassis);
 		this(false);
 	}
-	
+
 	public Surge(boolean gear) {
 		this.gear = gear;
 	}

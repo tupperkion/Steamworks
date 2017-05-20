@@ -5,12 +5,12 @@ import edu.wpi.first.wpilibj.networktables.NetworkTable;
 public class Vision {
 	public static NetworkTable table;
 
-	// horizontal FOV of camera
-	public static final double cameraFOV = Math.toRadians(62.2d);
-	public static final int cameraWidth = 480;
+	/** horizontal FOV of camera */
+	private static final double cameraFOV = Math.toRadians(62.2d);
+	private static final int cameraWidth = 480;
 
-	// distance from middle of bot to camera
-	public static final double c = 8.5d;
+	/** distance from middle of bot to camera */
+	private static final double c = 8.5d;
 
 	public static boolean inited = false;
 
@@ -52,7 +52,7 @@ public class Vision {
 	/**
 	 * Calculates turning angle. Provide "distance" to skip calculations. This
 	 * is the exact angle that the robot needs to turn.
-	 * 
+	 *
 	 * @param distance
 	 *            the distance from the robot to the tape (getDistance())
 	 */
@@ -88,9 +88,9 @@ public class Vision {
  *     |        \
  *     \_________\
  *     A    c     B
- * 
+ *
  * A: Position of gear B: Position of camera C: Position of peg
- * 
+ *
  * c: static, distance between camera and robot
  * a: detected by VT
  * b: calculated

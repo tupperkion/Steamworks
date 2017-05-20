@@ -1,4 +1,4 @@
-package org.usfirst.frc5506.Steamworks.commands;
+package org.usfirst.frc5506.Steamworks.auto;
 
 import org.usfirst.frc5506.Steamworks.Robot;
 import org.usfirst.frc5506.Steamworks.Vision;
@@ -20,11 +20,11 @@ public class Gear extends Command {
 		found = Vision.izgud();
 		timing = false;
 	}
-	
+
 	public Gear() {
 		this(false);
 	}
-	
+
 	public void execute() {
 		if (!found) found = Vision.izgud();
 		if (scan && !found) {
@@ -80,9 +80,9 @@ public class Gear extends Command {
 	}
 
 	public boolean isFinished() {
-		return Robot.oi.getDriverJoystick().getRawButton(1) || isTimedOut() || !Vision.isalive() || (!scan && !found);
+		return Robot.joystick.getRawButton(1) || isTimedOut() || !Vision.isalive() || (!scan && !found);
 	}
-	
+
 	public void end() {
 		Robot.driveTrain.driveArcade(0, 0);
 	}

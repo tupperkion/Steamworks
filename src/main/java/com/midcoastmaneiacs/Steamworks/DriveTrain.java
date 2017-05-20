@@ -1,7 +1,7 @@
-package org.usfirst.frc5506.Steamworks.subsystems;
+package com.midcoastmaneiacs.Steamworks;
 
 import edu.wpi.first.wpilibj.VictorSP;
-import org.usfirst.frc5506.Steamworks.Robot;
+import com.midcoastmaneiacs.Steamworks.Robot;
 
 import edu.wpi.first.wpilibj.AnalogGyro;
 import edu.wpi.first.wpilibj.SpeedController;

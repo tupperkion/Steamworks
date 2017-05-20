@@ -1,14 +1,13 @@
-package org.usfirst.frc5506.Steamworks;
+package com.midcoastmaneiacs.Steamworks;
 
+import com.midcoastmaneiacs.Steamworks.auto.Auto;
+import com.midcoastmaneiacs.Steamworks.auto.Vision;
 import edu.wpi.first.wpilibj.*;
 import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.command.Scheduler;
 import edu.wpi.first.wpilibj.livewindow.LiveWindow;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import org.usfirst.frc5506.Steamworks.auto.Auto;
-import org.usfirst.frc5506.Steamworks.subsystems.Climber;
-import org.usfirst.frc5506.Steamworks.subsystems.DriveTrain;
 
 public class Robot extends IterativeRobot {
 	public Command auto;
@@ -26,6 +25,8 @@ public class Robot extends IterativeRobot {
 	public static Climber climber;
 
 	public static Joystick joystick = new Joystick(0);
+
+	public static boolean enabled = false;
 
 	public void robotInit() {
 		driveTrain = new DriveTrain();

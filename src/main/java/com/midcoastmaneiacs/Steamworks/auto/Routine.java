@@ -1,4 +1,4 @@
-package org.usfirst.frc5506.Steamworks.auto;
+package com.midcoastmaneiacs.Steamworks.auto;
 
 import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.command.CommandGroup;

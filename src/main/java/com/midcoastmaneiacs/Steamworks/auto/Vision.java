@@ -1,5 +1,6 @@
-package org.usfirst.frc5506.Steamworks;
+package com.midcoastmaneiacs.Steamworks.auto;
 
+import com.midcoastmaneiacs.Steamworks.Robot;
 import edu.wpi.first.wpilibj.networktables.NetworkTable;
 
 public class Vision {

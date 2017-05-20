@@ -1,4 +1,4 @@
-package org.usfirst.frc5506.Steamworks.subsystems;
+package com.midcoastmaneiacs.Steamworks;
 
 import edu.wpi.first.wpilibj.Spark;
 

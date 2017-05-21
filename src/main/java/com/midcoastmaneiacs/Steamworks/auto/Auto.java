@@ -18,7 +18,7 @@ public class Auto extends CommandGroup {
 				switch (Robot.starting) {
 					case (1):
 					case (3):
-						addSequential(new Routine("Drive:-0.5;0.5;Stop;Gear"));
+						addSequential(new Routine("Drive:-0.5:0.5;Stop;Gear"));
 						addSequential(new Surge(true));
 						break;
 					case (2):
@@ -34,5 +34,20 @@ public class Auto extends CommandGroup {
 			default:
 				break;
 		}
+	}
+
+	@Override
+	protected void initialize() {
+		Robot.driveTrain.takeControl(this);
+	}
+
+	@Override
+	protected void end() {
+		Robot.driveTrain.relinguishControl(this);
+	}
+
+	@Override
+	protected boolean isFinished() {
+		return !Robot.driveTrain.controlledBy(this) || super.isFinished();
 	}
 }

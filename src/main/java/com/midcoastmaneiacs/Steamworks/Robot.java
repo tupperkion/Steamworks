@@ -4,15 +4,21 @@ import com.midcoastmaneiacs.Steamworks.auto.Auto;
 import com.midcoastmaneiacs.Steamworks.auto.Vision;
 import edu.wpi.first.wpilibj.*;
 import edu.wpi.first.wpilibj.command.Command;
-import edu.wpi.first.wpilibj.command.Scheduler;
 import edu.wpi.first.wpilibj.livewindow.LiveWindow;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
+import java.util.Timer;
+
 public class Robot extends IterativeRobot {
 	public Command auto;
 
-	// 1 = left; 2 = center; 3 = right; hey I guessed this right!
+	/** ONLY FOR TESTING PURPOSES */
+	public static final boolean forceCompetition = false;
+	/** will update based on FMS status */
+	public static boolean competition = false;
+
+	// 1 = left; 2 = center; 3 = right
 	public static byte starting = 1;
 	/** Starting position on field */
 	public static SendableChooser<Byte> pos;
@@ -26,11 +32,14 @@ public class Robot extends IterativeRobot {
 
 	public static Joystick joystick = new Joystick(0);
 
-	public static boolean enabled = false;
+	public static Timer clock;
 
 	public void robotInit() {
 		driveTrain = new DriveTrain();
 		climber = new Climber();
+
+		if (forceCompetition) // forceCompetition should always be off except when testing competition-only features!
+			System.err.println("WARNING: Force-competition mode is activated, MAKE SURE KION KNOWS ABOUT THIS!");
 
 		LiveWindow.addActuator("DriveTrain", "Left", (VictorSP) driveTrain.left);
 		LiveWindow.addActuator("DriveTrain", "Right", (VictorSP) driveTrain.right);
@@ -76,25 +85,42 @@ public class Robot extends IterativeRobot {
 		System.out.println("All systems go!");
 
 		// default indicators
-		SmartDashboard.putBoolean("power", fullPower);
+		SmartDashboard.putBoolean("Power", fullPower);
+
+		// good to go, start the scheduler
+		clock = new Timer(true);
+		clock.scheduleAtFixedRate(new Scheduler(), 0, 20);
 	}
 
 	public void disabledInit() {
 		driveTrain.drive(0, 0);
 		climber.set(0);
+		Scheduler.enabled = false;
+		if (!competition)
+			Scheduler.cancelAllCommands();
 	}
 
 	public void disabledPeriodic() {
-		Scheduler.getInstance().run();
+		//edu.wpi.first.wpilibj.command.Scheduler.getInstance().run();
 	}
 
 	public void autonomousPeriodic() {
-		Scheduler.getInstance().run();
+		//edu.wpi.first.wpilibj.command.Scheduler.getInstance().run();
 	}
 
 	public void teleopInit() {
-		if (auto != null)
-			auto.cancel();
+		Scheduler.enabled = true;
+		driveTrain.enableTeleop(true);
+		climber.enableTeleop(true);
+
+		if (!competition) {
+			// commands should've been cancelled during disabledInit, but just to be safe
+			Scheduler.cancelAllCommands();
+			driveTrain.takeControl(null);
+		}
+		if (driveTrain.controlledByTeleop()) {
+			notifyDriver();
+		}
 	}
 
 	/**
@@ -108,10 +134,11 @@ public class Robot extends IterativeRobot {
 	 * Picks auto routine from autochooser and starts it
 	 */
 	public void autonomousInit() {
+		Scheduler.enabled = true;
 		auto = autochooser.getSelected();
 		starting = pos.getSelected();
 		if (auto != null)
-			auto.start();
+			Scheduler.add(auto);
 	}
 
 	/** time / 20ms since last frame from rPi */
@@ -121,6 +148,11 @@ public class Robot extends IterativeRobot {
 	 * Updates smartdashboard values and verifies status of rPi
 	 */
 	public void robotPeriodic() {
+		// detect whether or not we're at a competition
+		if (!competition && DriverStation.getInstance().isFMSAttached())
+			System.err.println("INFO: Competition mode activated");
+		competition = forceCompetition || DriverStation.getInstance().isFMSAttached();
+
 		// if Pi hasn't responded for a second, it's probably dead
 		// Pi "responds" by setting "true" to "Pi" every time it processes a frame
 		SmartDashboard.putBoolean("Pi", time < 50);
@@ -173,9 +205,11 @@ public class Robot extends IterativeRobot {
 	 *
 	 * Sticks	Drive
 	 * LB		Toggle speed (100% or 50%, reflected by "Power" light in SmartDashboard, green = 100%)
+	 * A		Force control to be taken from auto routine in competition
 	 *
 	 * RB		Climb (100%)
 	 * B		Climb (50%, use when at top of touch pad to hold position, just tap the button repeatedly)
+	 * Triggers	Alternative controls for climbing (not sure which is which yet, the NI DriverStation is weird)
 	 *
 	 * The following will always be mapped, but aren't likely to be used during comp
 	 *
@@ -185,7 +219,7 @@ public class Robot extends IterativeRobot {
 	 * X		Reverse climber (50%, to be used during demonstrations and testing, not during comp)
 	 */
 	public void teleopPeriodic() {
-		Scheduler.getInstance().run(); // just in case a Command is running...
+		//edu.wpi.first.wpilibj.command.Scheduler.getInstance().run(); // just in case a Command is running...
 
 		// speed toggle
 		if (!lbWasPressed && joystick.getRawButton(5)) { // LB
@@ -195,31 +229,40 @@ public class Robot extends IterativeRobot {
 			lbWasPressed = false;
 		}
 
-		// climber
-		if (joystick.getRawButton(6)) // RB
-			climber.set(1);
-		else if (joystick.getRawButton(2)) // B
-			climber.set(0.5);
-		else if (joystick.getRawButton(3)) // X
-			climber.set(-0.5);
-		else
-			climber.set(joystick.getRawAxis(2) -
-							joystick.getRawAxis(3));
-
-		// drive base
-		/*if (j1arcade) {
-			double x = oi.getFunctionJoystick().getX() / (fullPower ? 1 : 2);
-			double y = -oi.getFunctionJoystick().getY() / (fullPower ? 1 : 2);
-			driveTrain.driveArcade(y, x);
-		} else {*/
-		// left axis = 1, right axis = 5
-		double leftSpeed = -joystick.getRawAxis(1);
-		double rightSpeed = -joystick.getRawAxis(5);
-		if (driveTrain.teleop) {
+		if (driveTrain.controlledByTeleop()) {
+			// left axis = 1, right axis = 5
+			double leftSpeed = -joystick.getRawAxis(1);
+			double rightSpeed = -joystick.getRawAxis(5);
 			driveTrain.driveLeftCurved(!deadZone || Math.abs(leftSpeed) > 0.15 ? leftSpeed * (fullPower ? 1 : 0.5) : 0);
 			driveTrain
 				.driveRightCurved(!deadZone || Math.abs(rightSpeed) > 0.15 ? rightSpeed * (fullPower ? 1 : 0.5) : 0);
+		} else {
+			// this means that the auto period has just ended, teleop has just started, but the auto routine is still
+			// running, waiting for the driver to manually take control
+			if (Math.abs(joystick.getRawAxis(1)) >= 0.9 && Math.abs(joystick.getRawAxis(5)) >= 0.9 || joystick.getRawButton(1)) {
+				Scheduler.cancelAllCommands();
+				driveTrain.enableTeleop(true);
+				driveTrain.takeControl(null); // ensure teleop has control
+				notifyDriver();
+			}
 		}
-		//}
+
+		if (climber.controlledByTeleop()) {
+			if (joystick.getRawButton(6)) // RB
+				climber.set(1);
+			else if (joystick.getRawButton(2)) // B
+				climber.set(0.5);
+			else if (joystick.getRawButton(3)) // X
+				climber.set(-0.5);
+			else
+				climber.set(joystick.getRawAxis(2) - joystick.getRawAxis(3));
+		}
+	}
+
+	/**
+	 * Notifies the driver of some sort of event (by rumbling the controller).
+	 */
+	public static void notifyDriver() {
+		Scheduler.add(new Notifier());
 	}
 }

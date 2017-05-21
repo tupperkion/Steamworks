@@ -1,14 +1,11 @@
 package com.midcoastmaneiacs.Steamworks;
 
-import edu.wpi.first.wpilibj.VictorSP;
-import com.midcoastmaneiacs.Steamworks.Robot;
-
 import edu.wpi.first.wpilibj.AnalogGyro;
-import edu.wpi.first.wpilibj.SpeedController;
-import edu.wpi.first.wpilibj.command.Subsystem;
 import edu.wpi.first.wpilibj.GenericHID.RumbleType;
+import edu.wpi.first.wpilibj.SpeedController;
+import edu.wpi.first.wpilibj.VictorSP;
 
-public class DriveTrain extends Subsystem {
+public class DriveTrain extends MMSubsystem {
 	public final SpeedController left = new VictorSP(1);
 	public final SpeedController right = new VictorSP(2);
 	public final AnalogGyro gyro = new AnalogGyro(1);
@@ -25,7 +22,7 @@ public class DriveTrain extends Subsystem {
 	public void driveLeft(double speed) {
 		lastLeftSpeed = speed;
 		left.set(speed);
-		if (Math.abs(speed) >= 0.15 && Robot.rumble.getSelected())
+		if (Notifier.isNotifying() && Math.abs(speed) >= 0.15 && Robot.rumble.getSelected())
 			Robot.joystick.setRumble(RumbleType.kLeftRumble, Math.abs(speed));
 		else
 			Robot.joystick.setRumble(RumbleType.kLeftRumble, 0);
@@ -34,7 +31,7 @@ public class DriveTrain extends Subsystem {
 	public void driveRight(double speed) {
 		lastRightSpeed = speed;
 		right.set(-speed);
-		if (Math.abs(speed) >= 0.15 && Robot.rumble.getSelected())
+		if (Notifier.isNotifying() && Math.abs(speed) >= 0.15 && Robot.rumble.getSelected())
 			Robot.joystick.setRumble(RumbleType.kRightRumble, Math.abs(speed));
 		else
 			Robot.joystick.setRumble(RumbleType.kRightRumble, 0);

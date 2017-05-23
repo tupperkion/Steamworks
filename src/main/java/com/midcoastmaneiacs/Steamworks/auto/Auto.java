@@ -19,17 +19,17 @@ public class Auto extends CommandGroup {
 					case (1):
 					case (3):
 						addSequential(new Routine("Drive:-0.5:0.5;Stop;Gear"));
-						addSequential(new Surge(true));
+						addSequential(new DriveCommand(0.4, 0.25));
 						break;
 					case (2):
 					default:
 						addSequential(new Gear(true));
-						addSequential(new Surge(true));
+						addSequential(new DriveCommand(0.4, 0.25));
 						break;
 				}
 				break;
 			case(1):
-				addSequential(new Surge());
+				addSequential(new DriveCommand(-0.6, 2));
 				break;
 			default:
 				break;

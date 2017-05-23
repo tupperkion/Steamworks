@@ -28,11 +28,12 @@ public abstract class MMSubsystem extends Subsystem {
 	}
 
 	/**
-	 * Relinquish control of Subsystem, only of it was previously controlled by command.
+	 * Relinquish control of Subsystem, only of it was previously controlled by command. More specifically, will call
+	 * takeControl(null), so Subsystems may override takeControl, and this method will obey that.
 	 */
 	public void relinguishControl(Command command) {
 		if (controllingCommand == command)
-			controllingCommand = null;
+			takeControl(null);
 	}
 
 	/**

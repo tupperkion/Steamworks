@@ -4,6 +4,7 @@ import edu.wpi.first.wpilibj.AnalogGyro;
 import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj.SpeedController;
 import edu.wpi.first.wpilibj.VictorSP;
+import edu.wpi.first.wpilibj.command.Command;
 
 public class DriveTrain extends MMSubsystem {
 	public final SpeedController left = new VictorSP(1);
@@ -14,6 +15,54 @@ public class DriveTrain extends MMSubsystem {
 	private double lastLeftSpeed = 0d;
 	private double lastRightSpeed = 0d;
 	private final boolean accelCurve = true;
+
+	private State state = State.DISABLED;
+
+	/**
+	 * Gives control to the currently running command and drives the robot, ensuring that the current heading is
+	 * maintained. Must be called while a command is running (e.g. in initialize()).
+	 * @param speed The desired speed of the robot.
+	 * @throws IllegalUseOfAutopilotException if called outside a command.
+	 */
+	public void setAutopilot(double speed) {
+		if (Scheduler.currentCommand != null) {
+			setState(State.AUTOPILOT);
+			takeControl(Scheduler.currentCommand);
+			wantedHeading = getGyro();
+			this.speed = speed;
+		} else
+			throw new IllegalUseOfAutopilotException("setAutopilot must be called by a Command!");
+	}
+
+	private void setState(State state) {
+		this.state = state;
+	}
+
+	public State getState() {
+		return state;
+	}
+
+	@Override
+	public void enableTeleop(boolean control) {
+		super.enableTeleop(control);
+		if (control && state == State.DISABLED)
+			setState(State.TELEOP);
+		else if (!control && state == State.TELEOP)
+			setState(controlledBy(null) ? State.DISABLED : State.COMMAND);
+	}
+
+	@Override
+	public void takeControl(Command command) {
+		super.takeControl(command);
+		if (command != null && state != State.AUTOPILOT && state != State.COMMAND)
+			setState(State.COMMAND);
+		else if (command == null) {
+			if (controlledByTeleop() && state != State.TELEOP)
+				setState(State.TELEOP);
+			else if (!controlledByTeleop())
+				setState(State.DISABLED);
+		}
+	}
 
 	public DriveTrain() {
 		gyro.setSensitivity(0.007); // idk I found this in RobotMap so it's here now
@@ -122,4 +171,41 @@ public class DriveTrain extends MMSubsystem {
 
 	@Override
 	protected void initDefaultCommand() {}
+
+	public double wantedHeading = 0;
+	public double speed = 0;
+	//** desired turning radius of robot, positive = right turn, negative = left, Double.MAX_VALUE for no turning. */
+	//public double turningRadius = Double.MAX_VALUE;
+
+	//** Distance between middles of two wheels */
+	//public final double ROBOT_WIDTH = 26;
+
+	/** How many percent per degree of error should we change the motor speed? */
+	private final double STABILIZATION_CONSTANT = 0.01;
+
+	public void updateAutopilot() {
+		double error = getTurningAngle(wantedHeading);
+		double left = speed;
+		double right = speed;
+		/*if (turningRadius != Double.MAX_VALUE) {
+			left = speed * (1 + (ROBOT_WIDTH / (2 * turningRadius)));
+			right = speed - (1 + (ROBOT_WIDTH / (2 * turningRadius)));
+		}(*/
+		left += error * STABILIZATION_CONSTANT;
+		right -= error * STABILIZATION_CONSTANT;
+		drive(left, right);
+	}
+
+	public enum State {
+		TELEOP, // teleoperator control
+		AUTOPILOT, // controlled by autopilot() method in DriveTrain.java
+		COMMAND, // controlled by command
+		DISABLED // disabled
+	}
+}
+
+class IllegalUseOfAutopilotException extends RuntimeException {
+	public IllegalUseOfAutopilotException(String message) {
+		super(message);
+	}
 }

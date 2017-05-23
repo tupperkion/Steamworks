@@ -17,6 +17,7 @@ import java.util.TimerTask;
 public class Scheduler extends TimerTask {
 	public static boolean enabled = false;
 	private static List<Command> schedule = new ArrayList<>();
+	public static Command currentCommand;
 
 	/**
 	 * Runs commands, similar to wpilib's getInstance().run().
@@ -28,12 +29,16 @@ public class Scheduler extends TimerTask {
 			// I expect the Robot ...init() methods to handle commands being cancelled
 			if (!enabled && !command.willRunWhenDisabled()) continue;
 
+			currentCommand = command;
 			if (!MMAccessProxy.runCommand(command)) {
 				i--;
 				schedule.remove(i);
 				MMAccessProxy.commandRemoved(command);
 			}
 		}
+		currentCommand = null;
+		if (Robot.driveTrain.getState() == DriveTrain.State.AUTOPILOT)
+			Robot.driveTrain.updateAutopilot();
 	}
 
 	public static void add(Command command) {

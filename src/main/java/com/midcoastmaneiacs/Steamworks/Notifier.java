@@ -50,4 +50,9 @@ public class Notifier extends Command {
 	public static boolean isNotifying() {
 		return timeLeft > 0;
 	}
+
+	@Override
+	public void start() {
+		Scheduler.add(this);
+	}
 }

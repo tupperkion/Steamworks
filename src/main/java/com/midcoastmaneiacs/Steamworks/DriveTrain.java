@@ -11,7 +11,6 @@ public class DriveTrain extends MMSubsystem {
 	public final SpeedController right = new VictorSP(2);
 	public final AnalogGyro gyro = new AnalogGyro(1);
 
-	public boolean teleop = true;
 	private double lastLeftSpeed = 0d;
 	private double lastRightSpeed = 0d;
 	private final boolean accelCurve = true;
@@ -28,7 +27,7 @@ public class DriveTrain extends MMSubsystem {
 		if (Scheduler.currentCommand != null) {
 			setState(State.AUTOPILOT);
 			takeControl(Scheduler.currentCommand);
-			wantedHeading = getGyro();
+			wantedHeading = getGyroMod();
 			this.speed = speed;
 		} else
 			throw new IllegalUseOfAutopilotException("setAutopilot must be called by a Command!");
@@ -69,21 +68,27 @@ public class DriveTrain extends MMSubsystem {
 	}
 
 	public void driveLeft(double speed) {
-		lastLeftSpeed = speed;
-		left.set(speed);
-		if (Notifier.isNotifying() && Math.abs(speed) >= 0.15 && Robot.rumble.getSelected())
-			Robot.joystick.setRumble(RumbleType.kLeftRumble, Math.abs(speed));
-		else
-			Robot.joystick.setRumble(RumbleType.kLeftRumble, 0);
+		if (willRespond()) {
+			lastLeftSpeed = speed;
+			left.set(speed);
+			if (Notifier.isNotifying() && Math.abs(speed) >= 0.15 && Robot.rumble.getSelected())
+				Robot.joystick.setRumble(RumbleType.kLeftRumble, Math.abs(speed));
+			else
+				Robot.joystick.setRumble(RumbleType.kLeftRumble, 0);
+		}
 	}
 
 	public void driveRight(double speed) {
-		lastRightSpeed = speed;
-		right.set(-speed);
-		if (Notifier.isNotifying() && Math.abs(speed) >= 0.15 && Robot.rumble.getSelected())
-			Robot.joystick.setRumble(RumbleType.kRightRumble, Math.abs(speed));
-		else
-			Robot.joystick.setRumble(RumbleType.kRightRumble, 0);
+		if (willRespond()) {
+			if (enforceControl && !controlledBy(null) && !controlledBy(Scheduler.currentCommand))
+				return;
+			lastRightSpeed = speed;
+			right.set(-speed);
+			if (Notifier.isNotifying() && Math.abs(speed) >= 0.15 && Robot.rumble.getSelected())
+				Robot.joystick.setRumble(RumbleType.kRightRumble, Math.abs(speed));
+			else
+				Robot.joystick.setRumble(RumbleType.kRightRumble, 0);
+		}
 	}
 
 	public void driveLeftCurved(double speed) {
@@ -139,6 +144,11 @@ public class DriveTrain extends MMSubsystem {
 		driveRight(right);
 	}
 
+	@Override
+	public void stop() {
+		drive(0, 0);
+	}
+
 	public double getGyro() {
 		return gyro.getAngle();
 	}
@@ -155,7 +165,7 @@ public class DriveTrain extends MMSubsystem {
 	 *
 	 * @param target
 	 *            target (will be normalized between 0 and 360)
-	 * @return angle angle (between -180 and 180, inclusive)
+	 * @return angle (between -180 and 180, inclusive)
 	 */
 	public double getTurningAngle(double target) {
 		target = target % 360;
@@ -180,7 +190,7 @@ public class DriveTrain extends MMSubsystem {
 	//** Distance between middles of two wheels */
 	//public final double ROBOT_WIDTH = 26;
 
-	/** How many percent per degree of error should we change the motor speed? */
+	/** How much power per degree of error should we change the motor speed? */
 	private final double STABILIZATION_CONSTANT = 0.01;
 
 	public void updateAutopilot() {
@@ -204,7 +214,7 @@ public class DriveTrain extends MMSubsystem {
 	}
 }
 
-class IllegalUseOfAutopilotException extends RuntimeException {
+class IllegalUseOfAutopilotException extends Scheduler.CommandNotFoundException {
 	public IllegalUseOfAutopilotException(String message) {
 		super(message);
 	}

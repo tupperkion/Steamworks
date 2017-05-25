@@ -21,12 +21,12 @@ public class Vision {
 		inited = true;
 	}
 
-	// is the vision code ready and running?
+	/** is the vision code ready and running? */
 	public static boolean isalive() {
 		return (table != null) && Robot.time < 50;
 	}
 
-	// can the camera see and ID the tape?
+	/** can the camera see and ID the tape? */
 	public static boolean izgud() {
 		return (table != null) && table.getBoolean("izgud", false) && isalive();
 	}
@@ -43,7 +43,7 @@ public class Vision {
 		return getError() / cameraWidth * cameraFOV;
 	}
 
-	// distance from gear to robot
+	/** distance from gear to robot */
 	public static double getDistance() {
 		double a = getCameraDistance();
 		double B = Math.PI / 2 + getCameraAngle();
@@ -51,8 +51,8 @@ public class Vision {
 	}
 
 	/**
-	 * Calculates turning angle. Provide "distance" to skip calculations. This
-	 * is the exact angle that the robot needs to turn.
+	 * Calculates turning angle. Provide "distance" to skip calculations. This is the exact angle that the robot needs
+	 * to turn.
 	 *
 	 * @param distance
 	 *            the distance from the robot to the tape (getDistance())

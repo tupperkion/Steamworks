@@ -10,5 +10,10 @@ public class Climber extends MMSubsystem {
 		climber.set(speed);
 	}
 
+	@Override
+	public void stop() {
+		set(0);
+	}
+
 	public void initDefaultCommand() {}
 }

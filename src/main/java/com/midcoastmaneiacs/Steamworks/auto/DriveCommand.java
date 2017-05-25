@@ -2,6 +2,7 @@ package com.midcoastmaneiacs.Steamworks.auto;
 
 import com.midcoastmaneiacs.Steamworks.Robot;
 
+import com.midcoastmaneiacs.Steamworks.Scheduler;
 import edu.wpi.first.wpilibj.command.Command;
 
 public class DriveCommand extends Command {
@@ -63,5 +64,10 @@ public class DriveCommand extends Command {
 	protected void end() {
 		Robot.driveTrain.relinguishControl(this);
 		Robot.driveTrain.drive(0, 0);
+	}
+
+	@Override
+	public void start() {
+		Scheduler.add(this);
 	}
 }

@@ -2,6 +2,7 @@ package com.midcoastmaneiacs.Steamworks.auto;
 
 import com.midcoastmaneiacs.Steamworks.Robot;
 
+import com.midcoastmaneiacs.Steamworks.Scheduler;
 import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.command.CommandGroup;
 
@@ -18,7 +19,9 @@ public class Auto extends CommandGroup {
 				switch (Robot.starting) {
 					case (1):
 					case (3):
-						addSequential(new Routine("Drive:-0.5:0.5;Stop;Gear"));
+						addSequential(new DriveCommand(-0.5, 0.5));
+						addSequential(new DriveCommand(0, 0));
+						addSequential(new Gear(true));
 						addSequential(new DriveCommand(0.4, 0.25));
 						break;
 					case (2):
@@ -49,5 +52,10 @@ public class Auto extends CommandGroup {
 	@Override
 	protected boolean isFinished() {
 		return !Robot.driveTrain.controlledBy(this) || super.isFinished();
+	}
+
+	@Override
+	public void start() {
+		Scheduler.add(this);
 	}
 }

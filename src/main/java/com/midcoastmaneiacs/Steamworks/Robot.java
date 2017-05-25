@@ -8,6 +8,8 @@ import edu.wpi.first.wpilibj.livewindow.LiveWindow;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Timer;
 
 public class Robot extends IterativeRobot {
@@ -29,17 +31,23 @@ public class Robot extends IterativeRobot {
 
 	public static DriveTrain driveTrain;
 	public static Climber climber;
+	public static List<MMSubsystem> subsystems;
 
 	public static Joystick joystick = new Joystick(0);
 
 	public static Timer clock;
 
 	public void robotInit() {
+		subsystems = new ArrayList<>();
 		driveTrain = new DriveTrain();
 		climber = new Climber();
+		subsystems.add(driveTrain);
+		subsystems.add(climber);
 
-		if (forceCompetition) // forceCompetition should always be off except when testing competition-only features!
-			System.err.println("WARNING: Force-competition mode is activated, MAKE SURE KION KNOWS ABOUT THIS!");
+		if (forceCompetition) { // forceCompetition should always be off except when testing competition-only features!
+			System.err.println("WARNING: Force-competition mode is activated, MAKE SURE A PROGRAMMER KNOWS ABOUT THIS!");
+			competition = true;
+		}
 
 		LiveWindow.addActuator("DriveTrain", "Left", (VictorSP) driveTrain.left);
 		LiveWindow.addActuator("DriveTrain", "Right", (VictorSP) driveTrain.right);
@@ -81,7 +89,7 @@ public class Robot extends IterativeRobot {
 		rumble.addObject("Rumble Off", false);
 		SmartDashboard.putData("Rumble", rumble);
 		SmartDashboard.putData("Position", pos);
-		SmartDashboard.putData("Routine", autochooser);
+		SmartDashboard.putData("Auto", autochooser);
 		System.out.println("All systems go!");
 
 		// default indicators
@@ -93,9 +101,9 @@ public class Robot extends IterativeRobot {
 	}
 
 	public void disabledInit() {
-		driveTrain.drive(0, 0);
-		climber.set(0);
 		Scheduler.enabled = false;
+		for (MMSubsystem i: subsystems)
+			i.stop();
 		if (!competition)
 			Scheduler.cancelAllCommands();
 	}
@@ -138,7 +146,7 @@ public class Robot extends IterativeRobot {
 		auto = autochooser.getSelected();
 		starting = pos.getSelected();
 		if (auto != null)
-			Scheduler.add(auto);
+			auto.start();
 	}
 
 	/** time / 20ms since last frame from rPi */
@@ -151,7 +159,8 @@ public class Robot extends IterativeRobot {
 		// detect whether or not we're at a competition
 		if (!competition && DriverStation.getInstance().isFMSAttached())
 			System.err.println("INFO: Competition mode activated");
-		competition = forceCompetition || DriverStation.getInstance().isFMSAttached();
+		if (!forceCompetition)
+			competition = DriverStation.getInstance().isFMSAttached();
 
 		// if Pi hasn't responded for a second, it's probably dead
 		// Pi "responds" by setting "true" to "Pi" every time it processes a frame
@@ -263,6 +272,6 @@ public class Robot extends IterativeRobot {
 	 * Notifies the driver of some sort of event (by rumbling the controller).
 	 */
 	public static void notifyDriver() {
-		Scheduler.add(new Notifier());
+		(new Notifier()).start();
 	}
 }

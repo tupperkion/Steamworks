@@ -1,12 +1,17 @@
 package com.midcoastmaneiacs.Steamworks.auto;
 
 import com.midcoastmaneiacs.Steamworks.Robot;
-
+import com.midcoastmaneiacs.Steamworks.Scheduler;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class Gear extends Command {
+	/**
+	 * Scans right instead if either of the following conditions are met:<ul>
+	 * <li>Player Station is Blue1, Red1, or Red2 (note that Blue2 still scans left)</li>
+	 * <li>Driver Station position selector is set to "Left"</li></ul>
+	 */
 	public boolean scan;
 	// have I found the vision targets?
 	public boolean found;
@@ -30,7 +35,7 @@ public class Gear extends Command {
 			if (DriverStation.getInstance().getLocation() == 1 ||
 				(DriverStation.getInstance().getLocation() == 2 && DriverStation.getInstance().getAlliance() == DriverStation.Alliance.Red) ||
 				Robot.pos.getSelected() == 3) {
-				// scan right, see doc in RoutineCommand
+				// scan right
 				Robot.driveTrain.driveLeft(0);
 				Robot.driveTrain.driveRight(-0.4);
 			} else {
@@ -84,5 +89,10 @@ public class Gear extends Command {
 
 	public void end() {
 		Robot.driveTrain.driveArcade(0, 0);
+	}
+
+	@Override
+	public void start() {
+		Scheduler.add(this);
 	}
 }

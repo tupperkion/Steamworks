@@ -90,14 +90,11 @@ public class Robot extends IterativeRobot {
 		SmartDashboard.putData("Rumble", rumble);
 		SmartDashboard.putData("Position", pos);
 		SmartDashboard.putData("Auto", autochooser);
-		System.out.println("All systems go!");
-
-		// default indicators
-		SmartDashboard.putBoolean("Power", fullPower);
 
 		// good to go, start the scheduler
 		clock = new Timer(true);
 		clock.scheduleAtFixedRate(new Scheduler(), 0, 20);
+		System.out.println("All systems go!");
 	}
 
 	public void disabledInit() {
@@ -216,6 +213,7 @@ public class Robot extends IterativeRobot {
 	 * Sticks         Drive
 	 * LB             Toggle speed (100% or 50%, reflected by "Power" light in SmartDashboard, green = 100%)
 	 * A              Force control to be taken from auto routine in competition
+	 *
 	 * POV            Drive arcade (temporarily disables tank drive and trigger-based climber controls)
 	 * Right stick X  Additional turning control while using POV arcade drive
 	 * Right trigger  Throttle for POV arcade drive

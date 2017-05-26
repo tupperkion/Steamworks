@@ -9,7 +9,7 @@ import edu.wpi.first.wpilibj.command.Command;
 public class DriveTrain extends MMSubsystem {
 	public final SpeedController left = new VictorSP(1);
 	public final SpeedController right = new VictorSP(2);
-	public final AnalogGyro gyro = new AnalogGyro(1);
+	public final AnalogGyro gyro = new AnalogGyro(0);
 
 	private double lastLeftSpeed = 0d;
 	private double lastRightSpeed = 0d;
@@ -71,22 +71,20 @@ public class DriveTrain extends MMSubsystem {
 		if (willRespond()) {
 			lastLeftSpeed = speed;
 			left.set(speed);
-			if (Notifier.isNotifying() && Math.abs(speed) >= 0.15 && Robot.rumble.getSelected())
+			if (!Notifier.isNotifying() && Math.abs(speed) >= 0.15 && Robot.rumble.getSelected())
 				Robot.joystick.setRumble(RumbleType.kLeftRumble, Math.abs(speed));
-			else
+			else if (!Notifier.isNotifying())
 				Robot.joystick.setRumble(RumbleType.kLeftRumble, 0);
 		}
 	}
 
 	public void driveRight(double speed) {
 		if (willRespond()) {
-			if (enforceControl && !controlledBy(null) && !controlledBy(Scheduler.currentCommand))
-				return;
 			lastRightSpeed = speed;
 			right.set(-speed);
-			if (Notifier.isNotifying() && Math.abs(speed) >= 0.15 && Robot.rumble.getSelected())
+			if (!Notifier.isNotifying() && Math.abs(speed) >= 0.15 && Robot.rumble.getSelected())
 				Robot.joystick.setRumble(RumbleType.kRightRumble, Math.abs(speed));
-			else
+			else if (!Notifier.isNotifying())
 				Robot.joystick.setRumble(RumbleType.kRightRumble, 0);
 		}
 	}

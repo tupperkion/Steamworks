@@ -153,7 +153,7 @@ public class Robot extends IterativeRobot {
 	public static int time = 0;
 
 	/**
-	 * Updates smartdashboard values and verifies status of rPi
+	 * Updates smartdashboard values, updates competition mode status, and verifies status of rPi
 	 */
 	public void robotPeriodic() {
 		// detect whether or not we're at a competition
@@ -161,6 +161,7 @@ public class Robot extends IterativeRobot {
 			System.err.println("INFO: Competition mode activated");
 		if (!forceCompetition)
 			competition = DriverStation.getInstance().isFMSAttached();
+		SmartDashboard.putBoolean("Competition mode", competition);
 
 		// if Pi hasn't responded for a second, it's probably dead
 		// Pi "responds" by setting "true" to "Pi" every time it processes a frame
@@ -209,23 +210,26 @@ public class Robot extends IterativeRobot {
 	/** "true" adds a 15% dead zone in the middle of the controller to ensure joysticks rest in non-motor-moving position */
 	private boolean deadZone = true;
 
-	/**
+	/*
 	 * Current mappings:
 	 *
-	 * Sticks	Drive
-	 * LB		Toggle speed (100% or 50%, reflected by "Power" light in SmartDashboard, green = 100%)
-	 * A		Force control to be taken from auto routine in competition
+	 * Sticks         Drive
+	 * LB             Toggle speed (100% or 50%, reflected by "Power" light in SmartDashboard, green = 100%)
+	 * A              Force control to be taken from auto routine in competition
+	 * POV            Drive arcade (temporarily disables tank drive and trigger-based climber controls)
+	 * Right stick X  Additional turning control while using POV arcade drive
+	 * Right trigger  Throttle for POV arcade drive
 	 *
-	 * RB		Climb (100%)
-	 * B		Climb (50%, use when at top of touch pad to hold position, just tap the button repeatedly)
-	 * Triggers	Alternative controls for climbing (not sure which is which yet, the NI DriverStation is weird)
+	 * RB        Climb (100%)
+	 * B         Climb (50%, use when at top of touch pad to hold position, just tap the button repeatedly)
+	 * Triggers  Alternative controls for climbing (not sure which is which yet, the NI DriverStation is weird)
 	 *
 	 * The following will always be mapped, but aren't likely to be used during comp
 	 *
-	 * A		Kill routines (may become useful if routines become used during teleop)
-	 * Y		Auto gear (primarily for testing purposes,
-	 *			can be used during comp if "Pi" and "Sight" on SmartDashboard are BOTH green)
-	 * X		Reverse climber (50%, to be used during demonstrations and testing, not during comp)
+	 * A  Kill routines (may become useful if routines become used during teleop)
+	 * Y  Auto gear (primarily for testing purposes,
+	 *        can be used during comp if "Pi" and "Sight" on SmartDashboard are BOTH green)
+	 * X  Reverse climber (50%, to be used during demonstrations and testing, not during comp)
 	 */
 	public void teleopPeriodic() {
 		//edu.wpi.first.wpilibj.command.Scheduler.getInstance().run(); // just in case a Command is running...
@@ -239,16 +243,22 @@ public class Robot extends IterativeRobot {
 		}
 
 		if (driveTrain.controlledByTeleop()) {
-			// left axis = 1, right axis = 5
-			double leftSpeed = -joystick.getRawAxis(1);
-			double rightSpeed = -joystick.getRawAxis(5);
-			driveTrain.driveLeftCurved(!deadZone || Math.abs(leftSpeed) > 0.15 ? leftSpeed * (fullPower ? 1 : 0.5) : 0);
-			driveTrain
-				.driveRightCurved(!deadZone || Math.abs(rightSpeed) > 0.15 ? rightSpeed * (fullPower ? 1 : 0.5) : 0);
+			if (joystick.getPOV() != -1) {
+				double forward = Math.cos(Math.toRadians(joystick.getPOV()));
+				double turn = Math.sin(Math.toRadians(joystick.getPOV())) + joystick.getRawAxis(4); // 4 = right X
+				driveTrain.driveArcade(forward * -joystick.getZ(), turn * -joystick.getZ());
+			} else {
+				// left axis = 1, right axis = 5
+				double leftSpeed = -joystick.getRawAxis(1);
+				double rightSpeed = -joystick.getRawAxis(5);
+				driveTrain.driveLeftCurved(!deadZone || Math.abs(leftSpeed) > 0.15 ? leftSpeed * (fullPower ? 1 : 0.5) : 0);
+				driveTrain
+					.driveRightCurved(!deadZone || Math.abs(rightSpeed) > 0.15 ? rightSpeed * (fullPower ? 1 : 0.5) : 0);
+			}
 		} else {
 			// this means that the auto period has just ended, teleop has just started, but the auto routine is still
 			// running, waiting for the driver to manually take control
-			if (Math.abs(joystick.getRawAxis(1)) >= 0.9 && Math.abs(joystick.getRawAxis(5)) >= 0.9 || joystick.getRawButton(1)) {
+			if (Math.abs(joystick.getRawAxis(1)) >= 0.9 && Math.abs(joystick.getRawAxis(5)) >= 0.9 ||joystick.getRawButton(1)) {
 				Scheduler.cancelAllCommands();
 				driveTrain.enableTeleop(true);
 				driveTrain.takeControl(null); // ensure teleop has control
@@ -263,8 +273,8 @@ public class Robot extends IterativeRobot {
 				climber.set(0.5);
 			else if (joystick.getRawButton(3)) // X
 				climber.set(-0.5);
-			else
-				climber.set(joystick.getRawAxis(2) - joystick.getRawAxis(3));
+			else if (joystick.getPOV() == -1)
+				climber.set(-joystick.getZ());
 		}
 	}
 

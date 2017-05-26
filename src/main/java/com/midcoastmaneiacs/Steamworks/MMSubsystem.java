@@ -12,7 +12,8 @@ public abstract class MMSubsystem extends Subsystem {
 
 	/**
 	 * If true, should only respond to updates if either A) Scheduler.currentCommand == controllingCommand or B)
-	 * controllingCommand == null. It is the responsibility of the subclass to [or not to] enforce this rule.
+	 * controllingCommand == null. It is the responsibility of the subclass to [or not to] enforce this rule. Using
+	 * willRespond() is generally the easiest way to enforce this.
 	 */
 	boolean enforceControl = true;
 
@@ -27,7 +28,7 @@ public abstract class MMSubsystem extends Subsystem {
 
 	/**
 	 * Grant control of the Subsystem to a command, guaranteeing that it won't be controlled by teleop.
-	 * @param command The command, or null to relinguish control to all commands
+	 * @param command The command, or null to relinquish control to all commands
 	 * @param enforce If true, subsystem updates should be ignored unless they are called by the controlling command
 	 *                (or there is no controlling command). Should have no effect when command is null.
 	 */

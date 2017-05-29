@@ -8,19 +8,24 @@ import java.util.List;
 import java.util.TimerTask;
 
 /**
- * Not the wpilib scheduler. This is intended to use static timing rather than relying on the timing of the periodic
+ * <p>Not the wpilib {@link edu.wpi.first.wpilibj.command.Scheduler Scheduler}. This is intended to use static timing
+ * rather than relying on the {@link edu.wpi.first.wpilibj.IterativeRobot#robotPeriodic() timing of the periodic}
  * functions, among other benefits.
- * Instantiating Scheduler can act as a TimerTask for timers, all instances will simply call static Scheduler.tick().
- * Commands MUST override command.start(). If this isn't possible they MUST NOT be started with command.start(), use
- * Scheduler.add(command) instead. However, command.cancel() still works to cancel commands, without overrides.
+ *
+ * <p>Instantiating Scheduler can act as a {@link TimerTask} for timers, all instances will simply call
+ * {@link Scheduler#tick() Scheduler.tick()}. Commands MUST override {@link Command#start()}. If this isn't possible
+ * they MUST NOT be started with {@link Command#start()}, use {@link Scheduler#add(Command) Scheduler.add()} instead.
+ *
+ * <p>However, {@link Command#cancel()} still works to cancel commands, without overrides.
  */
+@SuppressWarnings("WeakerAccess")
 public class Scheduler extends TimerTask {
 	public static boolean enabled = false;
 	private static List<Command> schedule = new ArrayList<>();
 	public static Command currentCommand;
 
 	/**
-	 * Runs commands, similar to wpilib's getInstance().run().
+	 * Runs commands, similar to wpilib's {@link edu.wpi.first.wpilibj.command.Scheduler#run() getInstance().run()}.
 	 */
 	public static void tick() {
 		for (int i = 0; i < schedule.size(); i++) {
@@ -32,10 +37,16 @@ public class Scheduler extends TimerTask {
 			// However, add an exception to allow commands to end if they are cancelled
 			if (!enabled && !command.isCanceled() && !command.willRunWhenDisabled()) continue;
 
-			if (!MMAccessProxy.runCommand(command)) {
+			// check if the command is cancelled, as command.run won't check if it's cancelled after initialize() and
+			// execute() are called, until the next run, so this allows a command to immediately cancel itself in favor
+			// of running a different command without relying on isFinished()
+			if (!MMAccessProxy.runCommand(command) || command.isCanceled()) {
 				schedule.remove(i);
 				i--;
 				MMAccessProxy.commandRemoved(command);
+				// ensure that commands have relinquished their control
+				for (MMSubsystem j: Robot.subsystems)
+					j.relinquishControl(command);
 			}
 		}
 		currentCommand = null;
@@ -47,13 +58,18 @@ public class Scheduler extends TimerTask {
 		}
 	}
 
+	/**
+	 * Starts running a command.
+	 *
+	 * @param command Command to add to the schedule
+	 */
 	public static void add(Command command) {
 		schedule.add(command);
 		MMAccessProxy.startRunningCommand(command);
 	}
 
 	/**
-	 * Runs Scheduler.tick(), used for TimerTask implementation.
+	 * Runs {@link Scheduler#tick() Scheduler.tick()}, used for TimerTask implementation.
 	 */
 	@Override
 	public void run() {
@@ -61,19 +77,21 @@ public class Scheduler extends TimerTask {
 	}
 
 	/**
-	 * Cancel all commands, currently used when robot is disabled during testing or a demonstration.
+	 * Cancel all commands (except {@link Notifier}, currently used when robot is disabled during testing or a demonstration.
 	 */
 	public static void cancelAllCommands() {
 		for (Command i: schedule)
-			i.cancel();
+			if (!(i instanceof Notifier)) // Don't cancel notifying the driver
+				i.cancel();
 		for (MMSubsystem i: Robot.subsystems)
 			// ensure that no command has control of the subsystems, this will also reset the driveTrain autopilot
 			i.takeControl(null);
 	}
 
 	/**
-	 * A RuntimeException that indicates that some function which is required to be called by a Command was called
-	 * outside of a command.
+	 * A RuntimeException that indicates that some function which is required to be called by a {@link Command} was
+	 * called outside of a command. For a command to be detected, that command must be running through the
+	 * {@link Scheduler Midcoast Maineiacs Scheduler}.
 	 */
 	public static class CommandNotFoundException extends RuntimeException {
 		public CommandNotFoundException(String message) {

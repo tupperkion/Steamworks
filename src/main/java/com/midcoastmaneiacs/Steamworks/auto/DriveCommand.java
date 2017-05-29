@@ -62,7 +62,7 @@ public class DriveCommand extends Command {
 	}
 
 	protected void end() {
-		Robot.driveTrain.relinguishControl(this);
+		Robot.driveTrain.relinquishControl(this);
 		Robot.driveTrain.drive(0, 0);
 	}
 

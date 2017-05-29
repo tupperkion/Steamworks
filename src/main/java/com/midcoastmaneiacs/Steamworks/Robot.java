@@ -11,17 +11,20 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
+import java.util.TimerTask;
 
+@SuppressWarnings("WeakerAccess")
 public class Robot extends IterativeRobot {
-	public Command auto;
+	/** How long is the end game period (in seconds)? Currently used to notify the driver */
+	public static final int ENDGAME = 30;
 
 	/** ONLY FOR TESTING PURPOSES */
-	public static final boolean forceCompetition = false;
+	public static final boolean FORCE_COMPETITION = false;
 	/** will update based on FMS status */
 	public static boolean competition = false;
 
 	// 1 = left; 2 = center; 3 = right
-	public static byte starting = 1;
+	public static byte starting = 2;
 	/** Starting position on field */
 	public static SendableChooser<Byte> pos;
 	/** Chosen auto routine */
@@ -37,14 +40,17 @@ public class Robot extends IterativeRobot {
 
 	public static Timer clock;
 
+	@Override
 	public void robotInit() {
-		subsystems = new ArrayList<>();
 		driveTrain = new DriveTrain();
 		climber = new Climber();
+		subsystems = new ArrayList<>();
 		subsystems.add(driveTrain);
 		subsystems.add(climber);
 
-		if (forceCompetition) { // forceCompetition should always be off except when testing competition-only features!
+		driveTrain.gyro.calibrate();
+
+		if (FORCE_COMPETITION) { // FORCE_COMPETITION should always be off except when testing competition-only features!
 			System.err.println("WARNING: Force-competition mode is activated, MAKE SURE A PROGRAMMER KNOWS ABOUT THIS!");
 			competition = true;
 		}
@@ -59,7 +65,6 @@ public class Robot extends IterativeRobot {
 		CameraServer.getInstance().startAutomaticCapture(0).setExposureManual(40);
 		// back camera (gear end)
 		CameraServer.getInstance().startAutomaticCapture(1).setExposureManual(50);
-		driveTrain.gyro.calibrate();
 		starting = (byte) DriverStation.getInstance().getLocation();
 		pos = new SendableChooser<>();
 		switch (starting) {
@@ -97,66 +102,18 @@ public class Robot extends IterativeRobot {
 		System.out.println("All systems go!");
 	}
 
-	public void disabledInit() {
-		Scheduler.enabled = false;
-		for (MMSubsystem i: subsystems)
-			i.stop();
-		if (!competition)
-			Scheduler.cancelAllCommands();
-	}
-
-	public void disabledPeriodic() {
-		//edu.wpi.first.wpilibj.command.Scheduler.getInstance().run();
-	}
-
-	public void autonomousPeriodic() {
-		//edu.wpi.first.wpilibj.command.Scheduler.getInstance().run();
-	}
-
-	public void teleopInit() {
-		Scheduler.enabled = true;
-		driveTrain.enableTeleop(true);
-		climber.enableTeleop(true);
-
-		if (!competition) {
-			// commands should've been cancelled during disabledInit, but just to be safe
-			Scheduler.cancelAllCommands();
-			driveTrain.takeControl(null);
-		}
-		if (driveTrain.controlledByTeleop()) {
-			notifyDriver();
-		}
-	}
-
-	/**
-	 * This function is called periodically during test mode
-	 */
-	public void testPeriodic() {
-		LiveWindow.run();
-	}
-
-	/**
-	 * Picks auto routine from autochooser and starts it
-	 */
-	public void autonomousInit() {
-		Scheduler.enabled = true;
-		auto = autochooser.getSelected();
-		starting = pos.getSelected();
-		if (auto != null)
-			auto.start();
-	}
-
 	/** time / 20ms since last frame from rPi */
 	public static int time = 0;
 
 	/**
 	 * Updates smartdashboard values, updates competition mode status, and verifies status of rPi
 	 */
+	@Override
 	public void robotPeriodic() {
 		// detect whether or not we're at a competition
 		if (!competition && DriverStation.getInstance().isFMSAttached())
 			System.err.println("INFO: Competition mode activated");
-		if (!forceCompetition)
+		if (!FORCE_COMPETITION)
 			competition = DriverStation.getInstance().isFMSAttached();
 		SmartDashboard.putBoolean("Competition mode", competition);
 
@@ -197,16 +154,42 @@ public class Robot extends IterativeRobot {
 		SmartDashboard.putBoolean("Power", fullPower);
 	}
 
+	@Override
+	public void disabledInit() {
+		Scheduler.enabled = false;
+		for (MMSubsystem i: subsystems)
+			i.stop();
+		if (!competition)
+			Scheduler.cancelAllCommands();
+		SmartDashboard.putBoolean("Endgame", false);
+	}
+
+	//////////
+	// Auto //
+	//////////
+
+	public static Command auto;
+
+	/**
+	 * Picks auto routine from autochooser and starts it
+	 */
+	@Override
+	public void autonomousInit() {
+		driveTrain.gyro.calibrate();
+		Scheduler.enabled = true;
+		auto = autochooser.getSelected();
+		starting = pos.getSelected();
+		if (auto != null)
+			auto.start();
+	}
+
+	public static boolean killSwitch() {
+		return joystick.getRawButton(1); // A
+	}
+
 	////////////
 	// Teleop //
 	////////////
-
-	private boolean lbWasPressed = false;
-	/** "true" = 100% power (competition mode), "false" = 50% power (demonstration/small space mode) */
-	private boolean fullPower = true;
-	/** "true" adds a 15% dead zone in the middle of the controller to ensure joysticks rest in non-motor-moving position */
-	private boolean deadZone = true;
-
 	/*
 	 * Current mappings:
 	 *
@@ -218,9 +201,10 @@ public class Robot extends IterativeRobot {
 	 * Right stick X  Additional turning control while using POV arcade drive
 	 * Right trigger  Throttle for POV arcade drive
 	 *
-	 * RB        Climb (100%)
-	 * B         Climb (50%, use when at top of touch pad to hold position, just tap the button repeatedly)
-	 * Triggers  Alternative controls for climbing (not sure which is which yet, the NI DriverStation is weird)
+	 * RB             Climb (100%)
+	 * B              Climb (50%, use when at top of touch pad to hold position, just tap the button repeatedly)
+	 * Left trigger   Climb down
+	 * Right trigger  Climb up
 	 *
 	 * The following will always be mapped, but aren't likely to be used during comp
 	 *
@@ -229,6 +213,45 @@ public class Robot extends IterativeRobot {
 	 *        can be used during comp if "Pi" and "Sight" on SmartDashboard are BOTH green)
 	 * X  Reverse climber (50%, to be used during demonstrations and testing, not during comp)
 	 */
+
+	private static boolean lbWasPressed = false;
+	/** "true" = 100% power (competition mode), "false" = 50% power (demonstration/small space mode) */
+	private static boolean fullPower = true;
+	/** "true" adds a 15% dead zone in the middle of the controller to ensure joysticks rest in non-motor-moving position */
+	@SuppressWarnings("FieldCanBeLocal")
+	private static boolean deadZone = true;
+	/** true = teleop is enabled but the driver hasn't gotten control yet */
+	private static boolean waitingForTeleop = true;
+
+	@Override
+	public void teleopInit() {
+		Scheduler.enabled = true;
+		driveTrain.enableTeleop(true);
+		climber.enableTeleop(true);
+		waitingForTeleop = !driveTrain.controlledByTeleop();
+
+		if (!competition) {
+			// commands should've been cancelled during disabledInit, but just to be safe
+			Scheduler.cancelAllCommands();
+		}
+		/*if (driveTrain.controlledByTeleop()) {
+			notifyDriver();
+		}*/
+
+		SmartDashboard.putBoolean("Endgame", false);
+		(new Timer()).schedule(new TimerTask() {
+			@Override
+			public void run() {
+				// endgame has arrived
+				notifyDriver();
+				SmartDashboard.putBoolean("Endgame", true);
+			}
+			// using edu.wpilib.first.wpilibj.Timer is based on how long teleop has been enabled, not the match
+			// configuration, so this will alert the driver at the right time even when not in practice or FMS mode
+		}, (long) ((150 - edu.wpi.first.wpilibj.Timer.getMatchTime() - ENDGAME) * 1000));
+	}
+
+	@Override
 	public void teleopPeriodic() {
 		//edu.wpi.first.wpilibj.command.Scheduler.getInstance().run(); // just in case a Command is running...
 
@@ -241,6 +264,7 @@ public class Robot extends IterativeRobot {
 		}
 
 		if (driveTrain.controlledByTeleop()) {
+			waitingForTeleop = false;
 			if (joystick.getPOV() != -1) {
 				double forward = Math.cos(Math.toRadians(joystick.getPOV()));
 				double turn = Math.sin(Math.toRadians(joystick.getPOV())) + joystick.getRawAxis(4); // 4 = right X
@@ -253,14 +277,16 @@ public class Robot extends IterativeRobot {
 				driveTrain
 					.driveRightCurved(!deadZone || Math.abs(rightSpeed) > 0.15 ? rightSpeed * (fullPower ? 1 : 0.5) : 0);
 			}
-		} else {
+		} else if (waitingForTeleop || killSwitch()) {
 			// this means that the auto period has just ended, teleop has just started, but the auto routine is still
-			// running, waiting for the driver to manually take control
-			if (Math.abs(joystick.getRawAxis(1)) >= 0.9 && Math.abs(joystick.getRawAxis(5)) >= 0.9 ||joystick.getRawButton(1)) {
+			// running, waiting for the driver to manually take control, or the driver is holding down A, so autonomous
+			// commands started during teleop need to be killed.
+			if (Math.abs(joystick.getRawAxis(1)) >= 0.9 && Math.abs(joystick.getRawAxis(5)) >= 0.9 || killSwitch()) {
 				Scheduler.cancelAllCommands();
 				driveTrain.enableTeleop(true);
 				driveTrain.takeControl(null); // ensure teleop has control
 				notifyDriver();
+				waitingForTeleop = false;
 			}
 		}
 
@@ -282,4 +308,15 @@ public class Robot extends IterativeRobot {
 	public static void notifyDriver() {
 		(new Notifier()).start();
 	}
+
+	@Override
+	public void testPeriodic() {
+		LiveWindow.run();
+	}
+
+	// get wpilib to shut up about overriding these methods
+	@Override
+	public void disabledPeriodic() {}
+	@Override
+	public void autonomousPeriodic() {}
 }

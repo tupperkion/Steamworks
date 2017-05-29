@@ -6,11 +6,15 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
+@SuppressWarnings("WeakerAccess")
 public class Gear extends Command {
 	/**
-	 * Scans right instead if either of the following conditions are met:<ul>
-	 * <li>Player Station is Blue1, Red1, or Red2 (note that Blue2 still scans left)</li>
-	 * <li>Driver Station position selector is set to "Left"</li></ul>
+	 * Scans right instead if either of the following conditions are met:
+	 * <ul><li>
+	 *     Player Station is Blue1, Red1, or Red2 (note that Blue2 still scans left)
+	 * </li><li>
+	 *     Driver Station position selector is set to "Left"
+	 * </li></ul>
 	 */
 	public boolean scan;
 	// have I found the vision targets?
@@ -18,15 +22,29 @@ public class Gear extends Command {
 	// is the clock running?
 	public boolean timing;
 
+	/**
+	 * A {@link Command} which:
+	 * <ul><li>
+	 *     takes control of the {@link com.midcoastmaneiacs.Steamworks.DriveTrain DriveTrain}
+	 * </li><li>
+	 *     scans by gradually pivoting left or right (see {@link Gear#scan}) until the peg is spotted by the camera
+	 *     ({@link Vision#izgud()} returns {@code true})
+	 * </li><li>
+	 *     moves the robot to the peg, turning as necessary to maintain alignment
+	 * </li><li>
+	 *     backs away slightly from peg in order to allow gear to be taken out
+	 * </li>
+	 *
+	 * <p>If {@code scan} is {@code false}, the command will <em>not</em> scan for the peg, and will immediately cancel
+	 * if the peg is not currently in the camera's FOV.
+	 *
+	 * @param scan Whether or not to scan
+	 */
 	public Gear(boolean scan) {
 		if (scan && !Vision.isalive()) scan = false;
 		this.scan = scan;
 		found = Vision.izgud();
 		timing = false;
-	}
-
-	public Gear() {
-		this(false);
 	}
 
 	public void execute() {
@@ -36,12 +54,10 @@ public class Gear extends Command {
 				(DriverStation.getInstance().getLocation() == 2 && DriverStation.getInstance().getAlliance() == DriverStation.Alliance.Red) ||
 				Robot.pos.getSelected() == 3) {
 				// scan right
-				Robot.driveTrain.driveLeft(0);
-				Robot.driveTrain.driveRight(-0.4);
+				Robot.driveTrain.drive(0, -0.4);
 			} else {
 				// scan left
-				Robot.driveTrain.driveRight(0);
-				Robot.driveTrain.driveLeft(-0.4);
+				Robot.driveTrain.drive(-0.4, 0);
 			}
 		}
 		if (found) {
@@ -51,19 +67,15 @@ public class Gear extends Command {
 					double error = Vision.getTurningAngle();
 					SmartDashboard.putNumber("Debug", error);
 					if (error < -30) {
-						Robot.driveTrain.driveLeft(-0.4);
-						Robot.driveTrain.driveRight(0);
+						Robot.driveTrain.drive(-0.4, 0);
 					} else if (error < -5) {
-						Robot.driveTrain.driveLeft(-0.6);
-						Robot.driveTrain.driveRight(-0.4);
+						Robot.driveTrain.drive(-0.6, -0.4);
 					} else if (error < 5) {
-						Robot.driveTrain.driveArcade(-0.6, 0);
+						Robot.driveTrain.drive(-0.6);
 					} else if (error < 30) {
-						Robot.driveTrain.driveRight(-0.6);
-						Robot.driveTrain.driveLeft(-0.4);
+						Robot.driveTrain.drive(-0.4, -0.6);
 					} else {
-						Robot.driveTrain.driveRight(-0.4);
-						Robot.driveTrain.driveRight(0);
+						Robot.driveTrain.drive(0, -0.4);
 					}
 				//} else {
 				//	if (!timing) {
@@ -73,22 +85,23 @@ public class Gear extends Command {
 				//	Robot.driveTrain.driveArcade(0.4, 0);
 				//}
 			} else {
-				Robot.driveTrain.driveArcade(0.5, 0);
-				if (!timing) {
+				/*if (!timing) {
 					setTimeout(0.5);
 					timing = true;
 				}
-				Robot.driveTrain.driveArcade(0.4, 0);
+				Robot.driveTrain.drive(0.4);*/
+				this.cancel();
+				(new Series(new DriveCommand(-0.4, 0.5), new DriveCommand(-0.4, 0.25))).start();
 			}
 		}
 	}
 
 	public boolean isFinished() {
-		return Robot.joystick.getRawButton(1) || isTimedOut() || !Vision.isalive() || (!scan && !found);
+		return Robot.killSwitch() || isTimedOut() || !Vision.isalive() || (!scan && !found);
 	}
 
 	public void end() {
-		Robot.driveTrain.driveArcade(0, 0);
+		Robot.driveTrain.drive(0);
 	}
 
 	@Override

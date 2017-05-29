@@ -6,6 +6,7 @@ import edu.wpi.first.wpilibj.SpeedController;
 import edu.wpi.first.wpilibj.VictorSP;
 import edu.wpi.first.wpilibj.command.Command;
 
+@SuppressWarnings("WeakerAccess")
 public class DriveTrain extends MMSubsystem {
 	public final SpeedController left = new VictorSP(1);
 	public final SpeedController right = new VictorSP(2);
@@ -13,13 +14,14 @@ public class DriveTrain extends MMSubsystem {
 
 	private double lastLeftSpeed = 0d;
 	private double lastRightSpeed = 0d;
-	private final boolean accelCurve = true;
+	private static final boolean ACCEL_CURVE = true;
 
 	private State state = State.DISABLED;
 
 	/**
 	 * Gives control to the currently running command and drives the robot, ensuring that the current heading is
-	 * maintained. Must be called while a command is running (e.g. in initialize()).
+	 * maintained. Must be called while a command is running (e.g. in {@link Command#initialize() initialize()}).
+	 *
 	 * @param speed The desired speed of the robot.
 	 * @throws IllegalUseOfAutopilotException if called outside a command.
 	 */
@@ -34,6 +36,8 @@ public class DriveTrain extends MMSubsystem {
 	}
 
 	private void setState(State state) {
+		if (this.state != state)
+			Robot.notifyDriver();
 		this.state = state;
 	}
 
@@ -90,7 +94,7 @@ public class DriveTrain extends MMSubsystem {
 	}
 
 	public void driveLeftCurved(double speed) {
-		if (!accelCurve) {
+		if (!ACCEL_CURVE) {
 			driveLeft(speed);
 			return;
 		}
@@ -108,7 +112,7 @@ public class DriveTrain extends MMSubsystem {
 	}
 
 	public void driveRightCurved(double speed) {
-		if (!accelCurve) {
+		if (!ACCEL_CURVE) {
 			driveRight(speed);
 			return;
 		}
@@ -142,6 +146,10 @@ public class DriveTrain extends MMSubsystem {
 		driveRight(right);
 	}
 
+	public void drive(double speed) {
+		drive(speed, speed);
+	}
+
 	@Override
 	public void stop() {
 		drive(0, 0);
@@ -161,9 +169,8 @@ public class DriveTrain extends MMSubsystem {
 	/**
 	 * Calculates how far (and which way) to turn to match a target angle
 	 *
-	 * @param target
-	 *            target (will be normalized between 0 and 360)
-	 * @return angle (between -180 and 180, inclusive)
+	 * @param target target (will be normalized between 0 and 360)
+	 * @return Angle between -180 and 180, inclusive
 	 */
 	public double getTurningAngle(double target) {
 		target = target % 360;
@@ -189,7 +196,8 @@ public class DriveTrain extends MMSubsystem {
 	//public final double ROBOT_WIDTH = 26;
 
 	/** How much power per degree of error should we change the motor speed? */
-	private final double STABILIZATION_CONSTANT = 0.01;
+	@SuppressWarnings("FieldCanBeLocal")
+	private static final double STABILIZATION_CONSTANT = 0.01;
 
 	public void updateAutopilot() {
 		double error = getTurningAngle(wantedHeading);

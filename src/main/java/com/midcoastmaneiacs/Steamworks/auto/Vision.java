@@ -3,6 +3,7 @@ package com.midcoastmaneiacs.Steamworks.auto;
 import com.midcoastmaneiacs.Steamworks.Robot;
 import edu.wpi.first.wpilibj.networktables.NetworkTable;
 
+@SuppressWarnings("WeakerAccess")
 public class Vision {
 	public static NetworkTable table;
 
@@ -43,7 +44,9 @@ public class Vision {
 		return getError() / cameraWidth * cameraFOV;
 	}
 
-	/** distance from gear to robot */
+	/**
+	 * Uses the Law of Cosines to calculate the distance from the gear (middle of robot) to the peg.
+	 */
 	public static double getDistance() {
 		double a = getCameraDistance();
 		double B = Math.PI / 2 + getCameraAngle();
@@ -52,15 +55,14 @@ public class Vision {
 
 	/**
 	 * Calculates turning angle. Provide "distance" to skip calculations. This is the exact angle that the robot needs
-	 * to turn.
+	 * to turn. Uses the Law of Sines.
 	 *
-	 * @param distance
-	 *            the distance from the robot to the tape (getDistance())
+	 * @param distance the distance from the robot to the tape ({@link Vision#getDistance()})
 	 */
 	public static double getTurningAngle(double distance) {
 		double a = getCameraDistance();
 		double B = Math.PI / 2 + getCameraAngle();
-		//return Math.toDegrees(B);
+		@SuppressWarnings("UnnecessaryLocalVariable")
 		double b = distance;
 		if (a <= c)
 			return 90 - Math.toDegrees(Math.asin(Math.sin(B) / b * a));
@@ -69,6 +71,7 @@ public class Vision {
 
 	/**
 	 * Calculates turning angle. Calculates absolute distance for convenience.
+	 * @see Vision#getTurningAngle(double distance)
 	 */
 	public static double getTurningAngle() {
 		return getTurningAngle(getDistance());
@@ -93,8 +96,8 @@ public class Vision {
  * A: Position of gear B: Position of camera C: Position of peg
  *
  * c: static, distance between camera and robot
- * a: detected by VT
- * b: calculated
- * B: detected by VT
- * A: calculated
+ * a: detected by VT  (getCameraDistance())
+ * b: calculated      (getDistance())
+ * B: detected by VT  (getCameraAngle())
+ * A: calculated      (getTurningAngle)
  */

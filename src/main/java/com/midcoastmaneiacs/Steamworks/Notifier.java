@@ -4,7 +4,8 @@ import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.command.Command;
 
 /**
- * Notifies the driver by causing 2 or more pulses to the joystick
+ * Notifies the driver by causing 2 pulses to the joystick. If a Notifier is already running, will cancel itself and the
+ * first Notifier will add one more pulse.
  */
 public class Notifier extends Command {
 	private static int timeLeft = 0;
@@ -25,6 +26,7 @@ public class Notifier extends Command {
 
 	@Override
 	public void execute() {
+		if (this.isCanceled()) return; // fun fact: if initialize() calls cancel(), execute() will still run once
 		if (timeLeft % 20 < 10) {
 			Robot.joystick.setRumble(GenericHID.RumbleType.kLeftRumble, 0);
 			Robot.joystick.setRumble(GenericHID.RumbleType.kRightRumble, 0);
@@ -32,6 +34,7 @@ public class Notifier extends Command {
 			Robot.joystick.setRumble(GenericHID.RumbleType.kLeftRumble, 1);
 			Robot.joystick.setRumble(GenericHID.RumbleType.kRightRumble, 1);
 		}
+		timeLeft--;
 	}
 
 	@Override

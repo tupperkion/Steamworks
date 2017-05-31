@@ -20,6 +20,8 @@ public class Robot extends IterativeRobot {
 
 	/** ONLY FOR TESTING PURPOSES */
 	public static final boolean FORCE_COMPETITION = false;
+	/** If true, competition mode will be enabled when practice mode is enabled */
+	public static final boolean PRACTICE_IS_COMPETITION = true;
 	/** will update based on FMS status */
 	public static boolean competition = false;
 
@@ -110,11 +112,16 @@ public class Robot extends IterativeRobot {
 	 */
 	@Override
 	public void robotPeriodic() {
-		// detect whether or not we're at a competition
-		if (!competition && DriverStation.getInstance().isFMSAttached())
-			System.err.println("INFO: Competition mode activated");
-		if (!FORCE_COMPETITION)
-			competition = DriverStation.getInstance().isFMSAttached();
+		if (!FORCE_COMPETITION) {
+			//                              detect whether or not we're at a competition
+			boolean willEnableCompetition = DriverStation.getInstance().isFMSAttached() || PRACTICE_IS_COMPETITION &&
+												// detect practice mode TODO: test practice mode
+												DriverStation.getInstance().getMatchTime() > 0.0;
+			if (!competition && willEnableCompetition)
+				System.err.println("INFO: Competition mode activated");
+			if (!FORCE_COMPETITION)
+				competition = willEnableCompetition;
+		}
 		SmartDashboard.putBoolean("Competition mode", competition);
 
 		// if Pi hasn't responded for a second, it's probably dead

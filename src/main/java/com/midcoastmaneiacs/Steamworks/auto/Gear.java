@@ -7,7 +7,7 @@ import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 @SuppressWarnings("WeakerAccess")
-public class Gear extends Command {
+public class Gear extends MMCommand {
 	/**
 	 * Scans right instead if either of the following conditions are met:
 	 * <ul><li>
@@ -45,6 +45,10 @@ public class Gear extends Command {
 		this.scan = scan;
 		found = Vision.izgud();
 		timing = false;
+	}
+
+	public void initialize() {
+		Robot.driveTrain.takeControl(this);
 	}
 
 	public void execute() {
@@ -97,15 +101,6 @@ public class Gear extends Command {
 	}
 
 	public boolean isFinished() {
-		return Robot.killSwitch() || isTimedOut() || !Vision.isalive() || (!scan && !found);
-	}
-
-	public void end() {
-		Robot.driveTrain.drive(0);
-	}
-
-	@Override
-	public void start() {
-		Scheduler.add(this);
+		return super.isFinished() || !Vision.isalive() || !scan && !found;
 	}
 }

@@ -1,5 +1,6 @@
 package com.midcoastmaneiacs.Steamworks;
 
+import com.midcoastmaneiacs.Steamworks.auto.MMCommand;
 import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.command.Subsystem;
 
@@ -19,24 +20,37 @@ public abstract class MMSubsystem extends Subsystem {
 	boolean enforceControl = true;
 
 	/**
-	 * Returns whether or not the Subsystem is controlled by a command.
+	 * Returns whether or not the Subsystem is controlled by a command or one of its parents.
 	 *
 	 * @param command The command to be checked (or null to check if no command controls it)
 	 * @return Whether or not the Subsystem is controlled by the command, or no command if "command" is null
 	 */
-	public boolean controlledBy(Command command) {
+	public boolean controlledBy(MMCommand command) {
+		return controllingCommand == command || command != null && command.controls(this);
+	}
+
+	/**
+	 * Returns whether or not the Subsystem is directing controlled by a command. (Controlled by it, and not one of its
+	 * parents)
+	 *
+	 * @param command The command to be checked (or null to check if no command controls it)
+	 * @return Whether or not the Subsystem is controlled by the command, or no command if "command" is null
+	 */
+	public boolean directlyControlledBy(Command command) {
 		return controllingCommand == command;
 	}
 
 	/**
-	 * Grant control of the Subsystem to a command, guaranteeing that it won't be controlled by teleop.
+	 * Grant control of the Subsystem to a command and all of its children (any command started by it),
+	 * guaranteeing that it won't be controlled by teleop.
 	 *
 	 * @param command The command, or null to relinquish control to all commands
 	 * @param enforce If true, subsystem updates should be ignored unless they are called by the controlling command
 	 *                (or there is no controlling command). Should have no effect when command is null.
 	 */
-	public void takeControl(Command command, boolean enforce) {
-		controllingCommand = command;
+	public void takeControl(MMCommand command, boolean enforce) {
+		if (command == null || !command.controls(this))
+			controllingCommand = command;
 		enforceControl = enforce;
 	}
 
@@ -47,17 +61,24 @@ public abstract class MMSubsystem extends Subsystem {
 	 *
 	 * @param command The command, or null to relinguish control to all commands
 	 */
-	public void takeControl(Command command) {
+	public void takeControl(MMCommand command) {
 		takeControl(command, true);
 	}
 
 	/**
 	 * Relinquish control of Subsystem, only of it was previously controlled by command. More specifically, will call
-	 * takeControl(null), so Subsystems may override takeControl, and this method will obey that.
+	 * takeControl(null), so Subsystems may override takeControl, and this method will obey that. Will not relinquish
+	 * control if the subsystem is being controlled by the commands
+	 * {@link com.midcoastmaneiacs.Steamworks.auto.MMCommand#parent parent}.
+	 *
+	 * @return If the subsystem was previously controlled by this command AND control has been relinquished
 	 */
-	public void relinquishControl(Command command) {
-		if (controllingCommand == command)
+	public boolean relinquishControl(Command command) {
+		if (controllingCommand == command) {
 			takeControl(null);
+			return true;
+		}
+		return false;
 	}
 
 	/**
@@ -83,7 +104,8 @@ public abstract class MMSubsystem extends Subsystem {
 	 * @return true if the subsystem should respond to the method that called this method
 	 */
 	public boolean willRespond() {
-		return controlledBy(null) || !enforceControl || controlledBy(Scheduler.currentCommand);
+		return controlledBy(null) || !enforceControl ||
+				   Scheduler.currentCommand instanceof MMCommand && controlledBy((MMCommand) Scheduler.currentCommand);
 	}
 
 	public void enableTeleop(boolean control) {
@@ -94,4 +116,10 @@ public abstract class MMSubsystem extends Subsystem {
 	 * Stop all motors.
 	 */
 	public abstract void stop();
+
+	/**
+	 * This shouldn't be necessary but it's here because wpilib. Does absolutely nothing.
+	 */
+	@Override
+	protected void initDefaultCommand() {}
 }

@@ -98,6 +98,8 @@ public class Robot extends IterativeRobot {
 		SmartDashboard.putData("Position", pos);
 		SmartDashboard.putData("Auto", autochooser);
 
+		driveTrain.gyro.calibrate();
+
 		// good to go, start the scheduler
 		clock = new Timer(true);
 		clock.scheduleAtFixedRate(new Scheduler(), 0, 20);
@@ -182,7 +184,7 @@ public class Robot extends IterativeRobot {
 	 */
 	@Override
 	public void autonomousInit() {
-		driveTrain.gyro.calibrate();
+		driveTrain.gyro.reset();
 		Scheduler.enabled = true;
 		auto = autochooser.getSelected();
 		starting = pos.getSelected();

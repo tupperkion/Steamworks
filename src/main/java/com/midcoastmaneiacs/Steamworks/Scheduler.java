@@ -1,5 +1,6 @@
 package com.midcoastmaneiacs.Steamworks;
 
+import com.midcoastmaneiacs.Steamworks.auto.MMCommand;
 import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.command.MMAccessProxy;
 
@@ -62,6 +63,7 @@ public class Scheduler extends TimerTask {
 	 * Starts running a command.
 	 *
 	 * @param command Command to add to the schedule
+	 * @return The command that started this command, if any. Used for inheritance logic.
 	 */
 	public static void add(Command command) {
 		schedule.add(command);
@@ -81,7 +83,7 @@ public class Scheduler extends TimerTask {
 	 */
 	public static void cancelAllCommands() {
 		for (Command i: schedule)
-			if (!(i instanceof Notifier)) // Don't cancel notifying the driver
+			if (i instanceof MMCommand) // Don't cancel passive commands such as the Notifier
 				i.cancel();
 		for (MMSubsystem i: Robot.subsystems)
 			// ensure that no command has control of the subsystems, this will also reset the driveTrain autopilot

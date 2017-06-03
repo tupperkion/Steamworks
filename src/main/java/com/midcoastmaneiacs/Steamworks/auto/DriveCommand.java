@@ -5,7 +5,7 @@ import com.midcoastmaneiacs.Steamworks.Robot;
 import com.midcoastmaneiacs.Steamworks.Scheduler;
 import edu.wpi.first.wpilibj.command.Command;
 
-public class DriveCommand extends Command {
+public class DriveCommand extends MMCommand {
 	private boolean autopilot;
 	private double left;
 	private double right;
@@ -36,7 +36,6 @@ public class DriveCommand extends Command {
 		this.left = left;
 		this.right = right;
 		this.time = time;
-		requires(Robot.driveTrain);
 	}
 
 	// Called just before this Command runs the first time
@@ -58,16 +57,6 @@ public class DriveCommand extends Command {
 	}
 
 	protected boolean isFinished() {
-		return isTimedOut() || !Robot.driveTrain.controlledBy(this);
-	}
-
-	protected void end() {
-		Robot.driveTrain.relinquishControl(this);
-		Robot.driveTrain.drive(0, 0);
-	}
-
-	@Override
-	public void start() {
-		Scheduler.add(this);
+		return super.isFinished() || !Robot.driveTrain.controlledBy(this);
 	}
 }

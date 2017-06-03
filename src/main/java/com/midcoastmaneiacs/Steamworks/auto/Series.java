@@ -1,15 +1,17 @@
 package com.midcoastmaneiacs.Steamworks.auto;
 
-import com.midcoastmaneiacs.Steamworks.Robot;
 import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.command.IllegalUseOfCommandException;
 
 /**
- * Runs multiple commands in parallel. Used as a convenient way to instantiate sequences (especially within a Command)
+ * <p>Runs multiple commands in parallel. Used as a convenient way to instantiate sequences (especially within a Command)
  * without dedicating a class to a new CommandGroup. Also allows inner commands to be cancelled, unlike a CommandGroup.
+ *
+ * <p>Does not attempt to control subsystems, and so does not use {@link MMCommand}'s implementition of
+ * {@link Series#end()}.
  */
-public class Series extends Command {
-	private Command[] commands;
+public class Series extends MMCommand {
+	Command[] commands;
 	private int i = 0;
 
 	public Series(Command... commands) {
@@ -50,15 +52,44 @@ public class Series extends Command {
 		}
 	}
 
+	/**
+	 * Cancels any child commands that are still running.
+	 */
 	@Override
 	protected void end() {
 		if (commands.length > i && commands[i].isRunning())
 			commands[i].cancel();
 	}
 
-	@Override
-	protected boolean isFinished() {
-		// cancel if the kill switch is activated
-		return Robot.killSwitch();
+	/**
+	 * Similar to {@link Series} but doesn't not run commands one-after-another. Instead, it runs all commands at the
+	 * same time, and ends when all of them have finished.
+	 */
+	public static class Parallel extends Series {
+		public Parallel(Command... commands) {
+			super(commands);
+		}
+
+		@Override
+		protected void initialize() {
+			for (Command i: commands)
+				i.start();
+		}
+
+		@Override
+		protected void execute() {
+			if (isCanceled()) return;
+			for (Command i: commands)
+				if (i.isRunning())
+					return; // a command is running, don't cancel
+			cancel(); // we haven't returned, so no command is running, meaning we're done running
+		}
+
+		@Override
+		protected void end() {
+			for (Command i: commands)
+				if (i.isRunning())
+					i.cancel();
+		}
 	}
 }

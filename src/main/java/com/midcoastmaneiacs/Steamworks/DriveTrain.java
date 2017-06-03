@@ -1,5 +1,6 @@
 package com.midcoastmaneiacs.Steamworks;
 
+import com.midcoastmaneiacs.Steamworks.auto.MMCommand;
 import edu.wpi.first.wpilibj.AnalogGyro;
 import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj.SpeedController;
@@ -17,6 +18,7 @@ public class DriveTrain extends MMSubsystem {
 	private static final boolean ACCEL_CURVE = true;
 
 	private State state = State.DISABLED;
+	private MMCommand autopilotCommand;
 
 	/**
 	 * Gives control to the currently running command and drives the robot, ensuring that the current heading is
@@ -26,18 +28,22 @@ public class DriveTrain extends MMSubsystem {
 	 * @throws IllegalUseOfAutopilotException if called outside a command.
 	 */
 	public void setAutopilot(double speed) {
-		if (Scheduler.currentCommand != null) {
+		if (Scheduler.currentCommand != null && Scheduler.currentCommand instanceof MMCommand) {
 			setState(State.AUTOPILOT);
-			takeControl(Scheduler.currentCommand);
+			takeControl((MMCommand) Scheduler.currentCommand);
+			autopilotCommand = (MMCommand) Scheduler.currentCommand;
 			wantedHeading = getGyroMod();
 			this.speed = speed;
-		} else
+		} else if (Scheduler.currentCommand != null)
+			throw new IllegalUseOfAutopilotException("setAutopilot must not be called by a passive command!");
+		else
 			throw new IllegalUseOfAutopilotException("setAutopilot must be called by a Command!");
 	}
 
 	private void setState(State state) {
-		if (this.state != state)
+		if (this.state != state && (this.state != State.AUTOPILOT && this.state != State.COMMAND) && (state != State.AUTOPILOT && state != State.COMMAND))
 			Robot.notifyDriver();
+		if (state != State.AUTOPILOT) autopilotCommand = null;
 		this.state = state;
 	}
 
@@ -55,7 +61,7 @@ public class DriveTrain extends MMSubsystem {
 	}
 
 	@Override
-	public void takeControl(Command command) {
+	public void takeControl(MMCommand command) {
 		super.takeControl(command);
 		if (command != null && state != State.AUTOPILOT && state != State.COMMAND)
 			setState(State.COMMAND);
@@ -67,8 +73,17 @@ public class DriveTrain extends MMSubsystem {
 		}
 	}
 
+	@Override
+	public boolean relinquishControl(Command command) {
+		boolean changed = super.relinquishControl(command);
+		// if changed is true, setState will be called anyway so we don't need to call it, hence "!changed" here
+		if (!changed && command == autopilotCommand)
+			setState(controlledBy(null) ? (controlledByTeleop() ? State.TELEOP : State.DISABLED) : State.COMMAND);
+		return changed;
+	}
+
 	public DriveTrain() {
-		gyro.setSensitivity(0.007); // idk I found this in RobotMap so it's here now
+		gyro.setSensitivity(2d / 300);
 	}
 
 	public void driveLeft(double speed) {
@@ -183,9 +198,6 @@ public class DriveTrain extends MMSubsystem {
 			return target - 360 - current;
 		}
 	}
-
-	@Override
-	protected void initDefaultCommand() {}
 
 	public double wantedHeading = 0;
 	public double speed = 0;

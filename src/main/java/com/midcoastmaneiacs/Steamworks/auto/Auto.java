@@ -4,35 +4,37 @@ import com.midcoastmaneiacs.Steamworks.Robot;
 import com.midcoastmaneiacs.Steamworks.Scheduler;
 import edu.wpi.first.wpilibj.command.CommandGroup;
 
-public class Auto extends CommandGroup {
-	// modes: 0 = gear, 1 = surge, 2 = play dead
+public class Auto extends MMCommand {
+	/** modes: 0 = gear, 1 = surge, 2 = play dead */
+	byte mode;
 	public Auto(byte mode) {
-		switch(mode) {
-			case(0):
-				switch (Robot.starting) {
-					case (1):
-					case (3):
-						addSequential(new DriveCommand(-0.5, 0.5));
-						addSequential(new DriveCommand(0, 0));
-						addSequential(new Gear(true));
-						break;
-					case (2):
-					default:
-						addSequential(new Gear(true));
-						break;
-				}
-				break;
-			case(1):
-				addSequential(new DriveCommand(-0.6, 2));
-				break;
-			default:
-				break;
-		}
+		this.mode = mode;
 	}
 
 	@Override
 	protected void initialize() {
 		Robot.driveTrain.takeControl(this);
+		switch(mode) {
+			case(0):
+				switch (Robot.starting) {
+					case (1):
+					case (3):
+						(new Series((new DriveCommand(-0.5, 0.5)),
+									  (new DriveCommand(0, 0)),
+									  (new Gear(true)))).start();
+						break;
+					case (2):
+					default:
+						(new Gear(true)).start();
+						break;
+				}
+				break;
+			case(1):
+				(new DriveCommand(-0.6, 2)).start();
+				break;
+			default:
+				break;
+		}
 	}
 
 	@Override
@@ -43,10 +45,5 @@ public class Auto extends CommandGroup {
 	@Override
 	protected boolean isFinished() {
 		return !Robot.driveTrain.controlledBy(this) || super.isFinished();
-	}
-
-	@Override
-	public void start() {
-		Scheduler.add(this);
 	}
 }

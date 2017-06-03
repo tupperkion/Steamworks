@@ -14,6 +14,4 @@ public class Climber extends MMSubsystem {
 	public void stop() {
 		set(0);
 	}
-
-	public void initDefaultCommand() {}
 }

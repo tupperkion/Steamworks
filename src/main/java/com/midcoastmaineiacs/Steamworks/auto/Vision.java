@@ -1,6 +1,6 @@
-package com.midcoastmaneiacs.Steamworks.auto;
+package com.midcoastmaineiacs.Steamworks.auto;
 
-import com.midcoastmaneiacs.Steamworks.Robot;
+import com.midcoastmaineiacs.Steamworks.Robot;
 import edu.wpi.first.wpilibj.networktables.NetworkTable;
 
 @SuppressWarnings("WeakerAccess")

@@ -1,4 +1,4 @@
-package com.midcoastmaneiacs.Steamworks.auto;
+package com.midcoastmaineiacs.Steamworks.auto;
 
 import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.command.IllegalUseOfCommandException;

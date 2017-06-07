@@ -1,6 +1,6 @@
-package com.midcoastmaneiacs.Steamworks.auto;
+package com.midcoastmaineiacs.Steamworks.auto;
 
-import com.midcoastmaneiacs.Steamworks.Robot;
+import com.midcoastmaineiacs.Steamworks.Robot;
 
 public class DriveCommand extends MMCommand {
 	private final boolean autopilot;
@@ -45,9 +45,11 @@ public class DriveCommand extends MMCommand {
 			Robot.driveTrain.setAutopilot(-0.6);
 		}*/
 		setTimeout(time);
-		if (autopilot)
-			Robot.driveTrain.setAutopilot(speed);
-		else {
+		if (autopilot) {
+			//Robot.driveTrain.setAutopilot(speed);
+			Robot.driveTrain.takeControl(this);
+			Robot.driveTrain.drive(speed); // TODO: change to go back to using autopilot
+		} else {
 			Robot.driveTrain.takeControl(this);
 			Robot.driveTrain.drive(left, right);
 		}

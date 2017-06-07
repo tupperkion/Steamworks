@@ -1,4 +1,4 @@
-package com.midcoastmaneiacs.Steamworks;
+package com.midcoastmaineiacs.Steamworks;
 
 import edu.wpi.first.wpilibj.Spark;
 import edu.wpi.first.wpilibj.SpeedController;

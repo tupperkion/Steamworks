@@ -1,7 +1,8 @@
-package com.midcoastmaneiacs.Steamworks;
+package com.midcoastmaineiacs.Steamworks;
 
-import com.midcoastmaneiacs.Steamworks.auto.Auto;
-import com.midcoastmaneiacs.Steamworks.auto.Vision;
+import com.midcoastmaineiacs.Steamworks.auto.Auto;
+import com.midcoastmaineiacs.Steamworks.auto.MMCommand;
+import com.midcoastmaineiacs.Steamworks.auto.Vision;
 import edu.wpi.first.wpilibj.*;
 import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.livewindow.LiveWindow;
@@ -14,7 +15,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 @SuppressWarnings("WeakerAccess")
-public class Robot extends IterativeRobot {
+public class Robot extends IterativeRobot { // TODO: Test changes resulting from mainThread introduction
 	/** How long is the end game period (in seconds)? Currently used to notify the driver */
 	public static final int ENDGAME = 30;
 
@@ -42,8 +43,12 @@ public class Robot extends IterativeRobot {
 
 	public static Timer clock;
 
+	public static Thread mainThread;
+
 	@Override
 	public void robotInit() {
+		mainThread = Thread.currentThread();
+
 		driveTrain = new DriveTrain();
 		climber = new Climber();
 		subsystems = new ArrayList<>();
@@ -53,7 +58,7 @@ public class Robot extends IterativeRobot {
 		driveTrain.gyro.calibrate();
 
 		if (FORCE_COMPETITION) { // FORCE_COMPETITION should always be off except when testing competition-only features!
-			System.err.println("WARNING: Force-competition mode is activated, MAKE SURE A PROGRAMMER KNOWS ABOUT THIS!");
+			DriverStation.reportWarning("Force-competition mode is activated, MAKE SURE A PROGRAMMER KNOWS ABOUT THIS!", false);
 			competition = true;
 		}
 
@@ -106,7 +111,7 @@ public class Robot extends IterativeRobot {
 																							   // detect practice mode
 																							   DriverStation.getInstance().getMatchTime() > 0.0;
 			if (!competition && willEnableCompetition)
-				System.err.println("INFO: Competition mode activated");
+				DriverStation.reportWarning("Competition mode activated", false);
 			if (!FORCE_COMPETITION)
 				competition = willEnableCompetition;
 		}
@@ -114,7 +119,7 @@ public class Robot extends IterativeRobot {
 		// good to go, start the scheduler
 		clock = new Timer(true);
 		clock.scheduleAtFixedRate(new Scheduler(), 0, 20);
-		System.out.println("All systems go!");
+		System.err.println("All systems go!");
 	}
 
 	/** time / 20ms since last frame from rPi */
@@ -173,6 +178,7 @@ public class Robot extends IterativeRobot {
 	@Override
 	public void disabledInit() {
 		Scheduler.enabled = false;
+		driveTrain.enableTeleop(false);
 		for (MMSubsystem i: subsystems)
 			i.stop();
 		if (!competition)
@@ -197,7 +203,7 @@ public class Robot extends IterativeRobot {
 																							   // detect practice mode TODO: test practice mode
 																							   DriverStation.getInstance().getMatchTime() > 0.0;
 			if (!competition && willEnableCompetition)
-				System.err.println("INFO: Competition mode activated");
+				DriverStation.reportWarning("Competition mode activated", false);
 			if (!FORCE_COMPETITION)
 				competition = willEnableCompetition;
 		}
@@ -222,6 +228,7 @@ public class Robot extends IterativeRobot {
 	 * Sticks         Drive
 	 * LB             Toggle speed (100% or 50%, reflected by "Power" light in SmartDashboard, green = 100%)
 	 * A              Force control to be taken from auto routine in competition
+	 * Y              Run auto routine (defined by SmartDashboard controls)
 	 *
 	 * POV            Drive arcade (temporarily disables tank drive and trigger-based climber controls)
 	 * Right stick X  Additional turning control while using POV arcade drive
@@ -235,8 +242,6 @@ public class Robot extends IterativeRobot {
 	 * The following will always be mapped, but aren't likely to be used during comp
 	 *
 	 * A  Kill routines (may become useful if routines become used during teleop)
-	 * Y  Auto gear (primarily for testing purposes,
-	 *        can be used during comp if "Pi" and "Sight" on SmartDashboard are BOTH green)
 	 * X  Reverse climber (50%, to be used during demonstrations and testing, not during comp)
 	 */
 
@@ -256,7 +261,7 @@ public class Robot extends IterativeRobot {
 																							   // detect practice mode
 																							   DriverStation.getInstance().getMatchTime() > 0.0;
 			if (!competition && willEnableCompetition)
-				System.err.println("INFO: Competition mode activated");
+				DriverStation.reportWarning("Competition mode activated", false);
 			if (!FORCE_COMPETITION)
 				competition = willEnableCompetition;
 		}
@@ -278,18 +283,18 @@ public class Robot extends IterativeRobot {
 			@Override
 			public void run() {
 				// endgame has arrived
-				notifyDriver();
-				SmartDashboard.putBoolean("Endgame", true);
+				if (Scheduler.enabled) {
+					notifyDriver();
+					SmartDashboard.putBoolean("Endgame", true);
+				}
 			}
 			// using edu.wpilib.first.wpilibj.Timer is based on how long teleop has been enabled, not the match
 			// configuration, so this will alert the driver at the right time even when not in practice or FMS mode
-		}, (long) ((150 - edu.wpi.first.wpilibj.Timer.getMatchTime() - ENDGAME) * 1000));
+		}, (long) ((edu.wpi.first.wpilibj.Timer.getMatchTime() + 150 - ENDGAME) * 1000));
 	}
 
 	@Override
 	public void teleopPeriodic() {
-		//edu.wpi.first.wpilibj.command.Scheduler.getInstance().run(); // just in case a Command is running...
-
 		// speed toggle
 		if (!lbWasPressed && joystick.getRawButton(5)) { // LB
 			lbWasPressed = true;
@@ -312,6 +317,10 @@ public class Robot extends IterativeRobot {
 				driveTrain.driveLeftCurved(!DEAD_ZONE || Math.abs(leftSpeed) > 0.15 ? leftSpeed * (fullPower ? 1 : 0.5) : 0);
 				//noinspection ConstantConditions
 				driveTrain.driveRightCurved(!DEAD_ZONE || Math.abs(rightSpeed) > 0.15 ? rightSpeed * (fullPower ? 1 : 0.5) : 0);
+			}
+			if (joystick.getRawButton(4)) {
+				autochooser.getSelected().start();
+				driveTrain.takeControl((MMCommand) autochooser.getSelected());
 			}
 		} else if (waitingForTeleop || killSwitch()) {
 			// this means that the auto period has just ended, teleop has just started, but the auto routine is still

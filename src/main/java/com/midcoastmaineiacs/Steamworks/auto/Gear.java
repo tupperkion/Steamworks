@@ -1,6 +1,7 @@
-package com.midcoastmaneiacs.Steamworks.auto;
+package com.midcoastmaineiacs.Steamworks.auto;
 
-import com.midcoastmaneiacs.Steamworks.Robot;
+import com.midcoastmaineiacs.Steamworks.DriveTrain;
+import com.midcoastmaineiacs.Steamworks.Robot;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -24,7 +25,7 @@ public class Gear extends MMCommand {
 	/**
 	 * A {@link Command} which:
 	 * <ul><li>
-	 *     takes control of the {@link com.midcoastmaneiacs.Steamworks.DriveTrain DriveTrain}
+	 *     takes control of the {@link DriveTrain DriveTrain}
 	 * </li><li>
 	 *     scans by gradually pivoting left or right (see {@link Gear#scan}) until the peg is spotted by the camera
 	 *     ({@link Vision#izgud()} returns {@code true})

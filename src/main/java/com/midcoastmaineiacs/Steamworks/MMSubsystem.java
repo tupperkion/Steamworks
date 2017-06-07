@@ -1,6 +1,6 @@
-package com.midcoastmaneiacs.Steamworks;
+package com.midcoastmaineiacs.Steamworks;
 
-import com.midcoastmaneiacs.Steamworks.auto.MMCommand;
+import com.midcoastmaineiacs.Steamworks.auto.MMCommand;
 import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.command.Subsystem;
 
@@ -49,8 +49,11 @@ public abstract class MMSubsystem extends Subsystem {
 	 *                (or there is no controlling command). Should have no effect when command is null.
 	 */
 	public void takeControl(MMCommand command, boolean enforce) {
+		System.out.println(this + ": Taking control: " + command);
 		if (command == null || !command.controls(this))
 			controllingCommand = command;
+		else
+			System.out.println("-- nope, it already controls me!");
 		enforceControl = enforce;
 	}
 
@@ -69,11 +72,12 @@ public abstract class MMSubsystem extends Subsystem {
 	 * Relinquish control of Subsystem, only of it was previously controlled by command. More specifically, will call
 	 * takeControl(null), so Subsystems may override takeControl, and this method will obey that. Will not relinquish
 	 * control if the subsystem is being controlled by the commands
-	 * {@link com.midcoastmaneiacs.Steamworks.auto.MMCommand#parent parent}.
+	 * {@link MMCommand#parent parent}.
 	 *
 	 * @return If the subsystem was previously controlled by this command AND control has been relinquished
 	 */
 	public boolean relinquishControl(MMCommand command) {
+		System.out.println(this + ": Relinquishing control from " + command + " if it's " + controllingCommand);
 		if (controllingCommand == command) {
 			takeControl(null);
 			return true;
@@ -87,7 +91,7 @@ public abstract class MMSubsystem extends Subsystem {
 	 * @return true if teleoperator controls should be allowed to effect the Subsystem.
 	 */
 	public boolean controlledByTeleop() {
-		return controlledByTeleop && controllingCommand != null;
+		return controlledByTeleop && controllingCommand == null;
 	}
 
 	/**
@@ -105,7 +109,7 @@ public abstract class MMSubsystem extends Subsystem {
 	 */
 	public boolean willRespond() {
 		return controlledBy(null) || !enforceControl ||
-				   Scheduler.currentCommand instanceof MMCommand && controlledBy((MMCommand) Scheduler.currentCommand);
+				   Scheduler.getCurrentCommand() instanceof MMCommand && controlledBy((MMCommand) Scheduler.getCurrentCommand());
 	}
 
 	/**
@@ -115,7 +119,8 @@ public abstract class MMSubsystem extends Subsystem {
 	 */
 	public boolean verifyResponse() {
 		if (willRespond()) {
-			if (Scheduler.currentCommand != null && !(Scheduler.currentCommand instanceof MMCommand))
+			StackTraceElement[] stack = Thread.currentThread().getStackTrace();
+			if (Scheduler.getCurrentCommand() != null && !(Scheduler.getCurrentCommand() instanceof MMCommand))
 				throw new Scheduler.IllegalPassiveCommandException("Passive command cannot control a subsystem!");
 			return true;
 		}

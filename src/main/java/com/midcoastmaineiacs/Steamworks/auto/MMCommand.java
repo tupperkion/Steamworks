@@ -1,9 +1,13 @@
-package com.midcoastmaneiacs.Steamworks.auto;
+package com.midcoastmaineiacs.Steamworks.auto;
 
-import com.midcoastmaneiacs.Steamworks.MMSubsystem;
-import com.midcoastmaneiacs.Steamworks.Robot;
-import com.midcoastmaneiacs.Steamworks.Scheduler;
+import com.midcoastmaineiacs.Steamworks.MMSubsystem;
+import com.midcoastmaineiacs.Steamworks.Notifier;
+import com.midcoastmaineiacs.Steamworks.Robot;
+import com.midcoastmaineiacs.Steamworks.Scheduler;
 import edu.wpi.first.wpilibj.command.Command;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Just like a wpilib command, but adds some new features.
@@ -13,10 +17,12 @@ import edu.wpi.first.wpilibj.command.Command;
  *     Adds default isFinished() and end() implementations
  * </li><li>
  *     Modifies start() implementation to properly use Scheduler (and detect if it is started by a parent command)
+ * </li><li>
+ *     Adds a fully-fledged command hierarchy system
  * </li></ul>
  * For the purposes of this project, a {@link Command} that is also an MMCommand (such as a {@link DriveCommand}) is
  * considered an "active command," while a {@link Command} that is <em>not</em> an MMCommand (such as a
- * {@link com.midcoastmaneiacs.Steamworks.Notifier Notifier}) is considered a "passive command."
+ * {@link Notifier Notifier}) is considered a "passive command."
  */
 @SuppressWarnings("WeakerAccess")
 public abstract class MMCommand extends Command {
@@ -26,6 +32,10 @@ public abstract class MMCommand extends Command {
 	public boolean controls(MMSubsystem subsystem) {
 		return subsystem.directlyControlledBy(this) || this.parent != null && parent.controls(subsystem);
 	}
+
+	private boolean requireChildren = false;
+	/** List of commands spawned (directly or indirectly) by this command. */
+	public List<MMCommand> children = new ArrayList<>();
 
 	/**
 	 * {@inheritDoc}
@@ -67,6 +77,22 @@ public abstract class MMCommand extends Command {
 	 * {@link MMCommand#isFinished()} to follow these rules without cancelling on timeout.
 	 */
 	protected boolean shouldCancel() {
+		if (requireChildren) {
+			boolean ok = false;
+			for (MMCommand i : children)
+				if (i.isRunning() && !i.isCanceled()) {
+					ok = true;
+					break;
+				}
+			if (!ok) return true;
+		}
 		return Robot.killSwitch() || parent != null && !parent.isRunning() && parent.isCanceled();
+	}
+
+	/**
+	 * After called, {@link MMCommand#shouldCancel()} will cancel the command if there are no running children commands.
+	 */
+	public void releaseForChildren() {
+		requireChildren = true;
 	}
 }

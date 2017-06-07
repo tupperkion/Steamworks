@@ -1,6 +1,6 @@
-package com.midcoastmaneiacs.Steamworks;
+package com.midcoastmaineiacs.Steamworks;
 
-import com.midcoastmaneiacs.Steamworks.auto.MMCommand;
+import com.midcoastmaineiacs.Steamworks.auto.MMCommand;
 import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.command.MMAccessProxy;
 
@@ -71,13 +71,17 @@ public class Scheduler extends TimerTask {
 	 * @see MMCommand#start()
 	 */
 	public static void add(Command command) {
-		if (currentCommand instanceof MMCommand)
-			((MMCommand) command).parent = (MMCommand) currentCommand;
-		else if (currentCommand != null)
-			throw new Scheduler.IllegalPassiveCommandException("Passive command cannot start an active command!\n" +
-																   "Modify the command class to extend MMCommand!");
-		else
-			((MMCommand) command).parent = null;
+		System.out.println("Starting command: " + command);
+		if (command instanceof MMCommand) {
+			if (getCurrentCommand() instanceof MMCommand) {
+				((MMCommand) command).parent = (MMCommand) getCurrentCommand();
+				((MMCommand) getCurrentCommand()).children.add((MMCommand) command);
+			} else if (getCurrentCommand() != null)
+				throw new Scheduler.IllegalPassiveCommandException("Passive command cannot start an active command!\n" +
+																	   "Modify the command class to extend MMCommand!");
+			else
+				((MMCommand) command).parent = null;
+		}
 		schedule.add(command);
 		MMAccessProxy.startRunningCommand(command);
 	}
@@ -100,6 +104,14 @@ public class Scheduler extends TimerTask {
 		for (MMSubsystem i: Robot.subsystems)
 			// ensure that no command has control of the subsystems, this will also reset the driveTrain autopilot
 			i.takeControl(null);
+	}
+
+	/**
+	 * @return The command that called this method, or null if no command led to this method being called
+	 */
+	public static Command getCurrentCommand() {
+		if (Thread.currentThread() == Robot.mainThread) System.out.println("A command is being processed while the robot is ticking!"); // TODO: Delete after testing
+		return Thread.currentThread() == Robot.mainThread ? null : currentCommand;
 	}
 
 	/**

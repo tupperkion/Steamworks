@@ -1,4 +1,4 @@
-package com.midcoastmaneiacs.Steamworks;
+package com.midcoastmaineiacs.Steamworks;
 
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.command.Command;

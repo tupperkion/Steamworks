@@ -1,6 +1,6 @@
-package com.midcoastmaneiacs.Steamworks.auto;
+package com.midcoastmaineiacs.Steamworks.auto;
 
-import com.midcoastmaneiacs.Steamworks.Robot;
+import com.midcoastmaineiacs.Steamworks.Robot;
 
 @SuppressWarnings("WeakerAccess")
 public class Auto extends MMCommand {
@@ -40,6 +40,7 @@ public class Auto extends MMCommand {
 			default:
 				break;
 		}
+		releaseForChildren();
 	}
 
 	@Override

@@ -1,6 +1,6 @@
-package com.midcoastmaneiacs.Steamworks;
+package com.midcoastmaineiacs.Steamworks;
 
-import com.midcoastmaneiacs.Steamworks.auto.MMCommand;
+import com.midcoastmaineiacs.Steamworks.auto.MMCommand;
 import edu.wpi.first.wpilibj.AnalogGyro;
 import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj.SpeedController;
@@ -11,7 +11,7 @@ import edu.wpi.first.wpilibj.command.Command;
 public class DriveTrain extends MMSubsystem {
 	public final SpeedController left = new VictorSP(1);
 	public final SpeedController right = new VictorSP(2);
-	public final AnalogGyro gyro = new AnalogGyro(0);
+	public final AnalogGyro gyro = new AnalogGyro(1);
 
 	private double lastLeftSpeed = 0d;
 	private double lastRightSpeed = 0d;
@@ -28,20 +28,21 @@ public class DriveTrain extends MMSubsystem {
 	 * @throws IllegalUseOfAutopilotException if called outside a command.
 	 */
 	public void setAutopilot(double speed) {
-		if (Scheduler.currentCommand != null && Scheduler.currentCommand instanceof MMCommand) {
+		if (Scheduler.getCurrentCommand() != null && Scheduler.getCurrentCommand() instanceof MMCommand) {
 			setState(State.AUTOPILOT);
-			takeControl((MMCommand) Scheduler.currentCommand);
-			autopilotCommand = (MMCommand) Scheduler.currentCommand;
+			takeControl((MMCommand) Scheduler.getCurrentCommand());
+			autopilotCommand = (MMCommand) Scheduler.getCurrentCommand();
 			wantedHeading = getGyroMod();
 			this.speed = speed;
-		} else if (Scheduler.currentCommand != null)
+		} else if (Scheduler.getCurrentCommand() != null)
 			throw new IllegalUseOfAutopilotException("setAutopilot must not be called by a passive command!");
 		else
 			throw new IllegalUseOfAutopilotException("setAutopilot must be called by a Command!");
 	}
 
 	private void setState(State state) {
-		if (this.state != state && (this.state != State.AUTOPILOT && this.state != State.COMMAND) && (state != State.AUTOPILOT && state != State.COMMAND))
+		System.err.println(state);
+		if (this.state != state && ((this.state != State.AUTOPILOT && this.state != State.COMMAND) || (state != State.AUTOPILOT && state != State.COMMAND)))
 			Robot.notifyDriver();
 		if (state != State.AUTOPILOT) autopilotCommand = null;
 		this.state = state;
@@ -83,7 +84,7 @@ public class DriveTrain extends MMSubsystem {
 	}
 
 	public DriveTrain() {
-		gyro.setSensitivity(2d / 300);
+		gyro.setSensitivity(2d / 300000);
 	}
 
 	public void driveLeft(double speed) {

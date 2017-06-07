@@ -50,10 +50,16 @@ public class Notifier extends Command {
 		Robot.joystick.setRumble(GenericHID.RumbleType.kRightRumble, 0);
 	}
 
+	@SuppressWarnings("BooleanMethodIsAlwaysInverted")
 	public static boolean isNotifying() {
 		return timeLeft > 0;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 *
+	 * Uses the {@link Scheduler Midcoast Maineiacs Scheduler}.
+	 */
 	@Override
 	public void start() {
 		Scheduler.add(this);

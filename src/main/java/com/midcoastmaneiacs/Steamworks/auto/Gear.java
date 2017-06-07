@@ -1,7 +1,6 @@
 package com.midcoastmaneiacs.Steamworks.auto;
 
 import com.midcoastmaneiacs.Steamworks.Robot;
-import com.midcoastmaneiacs.Steamworks.Scheduler;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -9,18 +8,18 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 @SuppressWarnings("WeakerAccess")
 public class Gear extends MMCommand {
 	/**
-	 * Scans right instead if either of the following conditions are met:
+	 * If the position selector is <em>not</em> "Right" <em>and</em> either of the following conditions are met, scans
+	 * right; otherwise scans left:
 	 * <ul><li>
-	 *     Player Station is Blue1, Red1, or Red2 (note that Blue2 still scans left)
+	 *     Player Station is Blue1, Red1, or Red2 (note that Blue2 still scans left), or;
 	 * </li><li>
-	 *     Driver Station position selector is set to "Left"
+	 *     Driver Station position selector is set to "Left";
 	 * </li></ul>
 	 */
-	public boolean scan;
+	public final boolean scan;
 	// have I found the vision targets?
 	public boolean found;
-	// is the clock running?
-	public boolean timing;
+	private MMCommand child;
 
 	/**
 	 * A {@link Command} which:
@@ -44,7 +43,6 @@ public class Gear extends MMCommand {
 		if (scan && !Vision.isalive()) scan = false;
 		this.scan = scan;
 		found = Vision.izgud();
-		timing = false;
 	}
 
 	public void initialize() {
@@ -54,9 +52,10 @@ public class Gear extends MMCommand {
 	public void execute() {
 		if (!found) found = Vision.izgud();
 		if (scan && !found) {
-			if (DriverStation.getInstance().getLocation() == 1 ||
-				(DriverStation.getInstance().getLocation() == 2 && DriverStation.getInstance().getAlliance() == DriverStation.Alliance.Red) ||
-				Robot.pos.getSelected() == 3) {
+			if (Robot.pos.getSelected() == 3)
+				Robot.driveTrain.drive(-0.4, 0);
+			if (Robot.pos.getSelected() == 1 || DriverStation.getInstance().getLocation() == 1 ||
+				(DriverStation.getInstance().getLocation() == 2 && DriverStation.getInstance().getAlliance() == DriverStation.Alliance.Red)) {
 				// scan right
 				Robot.driveTrain.drive(0, -0.4);
 			} else {
@@ -64,23 +63,23 @@ public class Gear extends MMCommand {
 				Robot.driveTrain.drive(-0.4, 0);
 			}
 		}
-		if (found) {
+		if (found && Robot.driveTrain.controlledBy(this)) {
 			if (Vision.izgud()) {
 				//double distance = Vision.getDistance();
 				//if (distance > 12) {
-					double error = Vision.getTurningAngle();
-					SmartDashboard.putNumber("Debug", error);
-					if (error < -30) {
-						Robot.driveTrain.drive(-0.4, 0);
-					} else if (error < -5) {
-						Robot.driveTrain.drive(-0.6, -0.4);
-					} else if (error < 5) {
-						Robot.driveTrain.drive(-0.6);
-					} else if (error < 30) {
-						Robot.driveTrain.drive(-0.4, -0.6);
-					} else {
-						Robot.driveTrain.drive(0, -0.4);
-					}
+				double error = Vision.getTurningAngle();
+				SmartDashboard.putNumber("Debug", error);
+				if (error < -30) {
+					Robot.driveTrain.drive(-0.4, 0);
+				} else if (error < -5) {
+					Robot.driveTrain.drive(-0.6, -0.4);
+				} else if (error < 5) {
+					Robot.driveTrain.drive(-0.6);
+				} else if (error < 30) {
+					Robot.driveTrain.drive(-0.4, -0.6);
+				} else {
+					Robot.driveTrain.drive(0, -0.4);
+				}
 				//} else {
 				//	if (!timing) {
 				//		setTimeout(0.5);
@@ -94,13 +93,15 @@ public class Gear extends MMCommand {
 					timing = true;
 				}
 				Robot.driveTrain.drive(0.4);*/
-				this.cancel();
-				(new Series(new DriveCommand(-0.4, 0.5), new DriveCommand(-0.4, 0.25))).start();
+				// relinquishing control will cause this to stop running the loop, but the command will stay "running"
+				// in order to prevent the child commands from being cancelled
+				child = (new Series(new DriveCommand(-0.4, 0.5), new DriveCommand(-0.4, 0.25)));
+				child.start();
 			}
 		}
 	}
 
 	public boolean isFinished() {
-		return super.isFinished() || !Vision.isalive() || !scan && !found;
+		return super.isFinished() || !Robot.driveTrain.controlledBy(this) || !Vision.isalive() || !scan && !found || !(child == null || child.isRunning());
 	}
 }

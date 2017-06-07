@@ -9,7 +9,7 @@ import edu.wpi.first.wpilibj.command.Subsystem;
  */
 @SuppressWarnings("WeakerAccess")
 public abstract class MMSubsystem extends Subsystem {
-	private Command controllingCommand = null;
+	private MMCommand controllingCommand = null;
 	private boolean controlledByTeleop = false;
 
 	/**
@@ -73,7 +73,7 @@ public abstract class MMSubsystem extends Subsystem {
 	 *
 	 * @return If the subsystem was previously controlled by this command AND control has been relinquished
 	 */
-	public boolean relinquishControl(Command command) {
+	public boolean relinquishControl(MMCommand command) {
 		if (controllingCommand == command) {
 			takeControl(null);
 			return true;
@@ -106,6 +106,20 @@ public abstract class MMSubsystem extends Subsystem {
 	public boolean willRespond() {
 		return controlledBy(null) || !enforceControl ||
 				   Scheduler.currentCommand instanceof MMCommand && controlledBy((MMCommand) Scheduler.currentCommand);
+	}
+
+	/**
+	 * Returns {@link MMSubsystem#willRespond()}, but ensures that the subsystem isn't being controlled by a passive command.
+	 * @return the result of {@link MMSubsystem#willRespond()}
+	 * @throws Scheduler.IllegalPassiveCommandException if the passive command is being run
+	 */
+	public boolean verifyResponse() {
+		if (willRespond()) {
+			if (Scheduler.currentCommand != null && !(Scheduler.currentCommand instanceof MMCommand))
+				throw new Scheduler.IllegalPassiveCommandException("Passive command cannot control a subsystem!");
+			return true;
+		}
+		return false;
 	}
 
 	public void enableTeleop(boolean control) {

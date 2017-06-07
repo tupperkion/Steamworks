@@ -22,7 +22,7 @@ public class Robot extends IterativeRobot {
 	public static final boolean FORCE_COMPETITION = false;
 	/** If true, competition mode will be enabled when practice mode is enabled */
 	public static final boolean PRACTICE_IS_COMPETITION = true;
-	/** will update based on FMS status */
+	/** will update based on FMS status, updates on robot init, and when teleop and auto modes are entered */
 	public static boolean competition = false;
 
 	// 1 = left; 2 = center; 3 = right
@@ -38,7 +38,7 @@ public class Robot extends IterativeRobot {
 	public static Climber climber;
 	public static List<MMSubsystem> subsystems;
 
-	public static Joystick joystick = new Joystick(0);
+	public static final Joystick joystick = new Joystick(0);
 
 	public static Timer clock;
 
@@ -88,9 +88,9 @@ public class Robot extends IterativeRobot {
 				break;
 		}
 		autochooser = new SendableChooser<>();
-		autochooser.addObject("Gear", new Auto((byte) 0));
-		autochooser.addObject("Mobility", new Auto((byte) 1));
-		autochooser.addDefault("Play dead", new Auto((byte) 1)); // at least safe reset the conveyer
+		autochooser.addObject("Gear", new Auto(Auto.Mode.GEAR));
+		autochooser.addObject("Mobility", new Auto(Auto.Mode.SURGE));
+		autochooser.addDefault("Play dead", new Auto(Auto.Mode.PLAY_DEAD));
 		rumble = new SendableChooser<>();
 		rumble.addDefault("Rumble On", true);
 		rumble.addObject("Rumble Off", false);
@@ -99,6 +99,17 @@ public class Robot extends IterativeRobot {
 		SmartDashboard.putData("Auto", autochooser);
 
 		driveTrain.gyro.calibrate();
+
+		if (!FORCE_COMPETITION) {
+			//                              detect whether or not we're at a competition
+			boolean willEnableCompetition = DriverStation.getInstance().isFMSAttached() || PRACTICE_IS_COMPETITION &&
+																							   // detect practice mode
+																							   DriverStation.getInstance().getMatchTime() > 0.0;
+			if (!competition && willEnableCompetition)
+				System.err.println("INFO: Competition mode activated");
+			if (!FORCE_COMPETITION)
+				competition = willEnableCompetition;
+		}
 
 		// good to go, start the scheduler
 		clock = new Timer(true);
@@ -114,17 +125,13 @@ public class Robot extends IterativeRobot {
 	 */
 	@Override
 	public void robotPeriodic() {
-		if (!FORCE_COMPETITION) {
-			//                              detect whether or not we're at a competition
-			boolean willEnableCompetition = DriverStation.getInstance().isFMSAttached() || PRACTICE_IS_COMPETITION &&
-												// detect practice mode TODO: test practice mode
-												DriverStation.getInstance().getMatchTime() > 0.0;
-			if (!competition && willEnableCompetition)
-				System.err.println("INFO: Competition mode activated");
-			if (!FORCE_COMPETITION)
-				competition = willEnableCompetition;
-		}
 		SmartDashboard.putBoolean("Competition mode", competition);
+
+		// report DriveTrain state
+		SmartDashboard.putBoolean(" Disabled", driveTrain.getState() == DriveTrain.State.DISABLED);
+		SmartDashboard.putBoolean(" Teleop", driveTrain.getState() == DriveTrain.State.TELEOP);
+		SmartDashboard.putBoolean(" Command", driveTrain.getState() == DriveTrain.State.COMMAND);
+		SmartDashboard.putBoolean(" Autopilot", driveTrain.getState() == DriveTrain.State.AUTOPILOT);
 
 		// if Pi hasn't responded for a second, it's probably dead
 		// Pi "responds" by setting "true" to "Pi" every time it processes a frame
@@ -184,6 +191,16 @@ public class Robot extends IterativeRobot {
 	 */
 	@Override
 	public void autonomousInit() {
+		if (!FORCE_COMPETITION) {
+			//                              detect whether or not we're at a competition
+			boolean willEnableCompetition = DriverStation.getInstance().isFMSAttached() || PRACTICE_IS_COMPETITION &&
+																							   // detect practice mode TODO: test practice mode
+																							   DriverStation.getInstance().getMatchTime() > 0.0;
+			if (!competition && willEnableCompetition)
+				System.err.println("INFO: Competition mode activated");
+			if (!FORCE_COMPETITION)
+				competition = willEnableCompetition;
+		}
 		driveTrain.gyro.reset();
 		Scheduler.enabled = true;
 		auto = autochooser.getSelected();
@@ -227,13 +244,22 @@ public class Robot extends IterativeRobot {
 	/** "true" = 100% power (competition mode), "false" = 50% power (demonstration/small space mode) */
 	private static boolean fullPower = true;
 	/** "true" adds a 15% dead zone in the middle of the controller to ensure joysticks rest in non-motor-moving position */
-	@SuppressWarnings("FieldCanBeLocal")
-	private static boolean deadZone = true;
+	private static final boolean DEAD_ZONE = true;
 	/** true = teleop is enabled but the driver hasn't gotten control yet */
 	private static boolean waitingForTeleop = true;
 
 	@Override
 	public void teleopInit() {
+		if (!FORCE_COMPETITION) {
+			//                              detect whether or not we're at a competition
+			boolean willEnableCompetition = DriverStation.getInstance().isFMSAttached() || PRACTICE_IS_COMPETITION &&
+																							   // detect practice mode
+																							   DriverStation.getInstance().getMatchTime() > 0.0;
+			if (!competition && willEnableCompetition)
+				System.err.println("INFO: Competition mode activated");
+			if (!FORCE_COMPETITION)
+				competition = willEnableCompetition;
+		}
 		Scheduler.enabled = true;
 		driveTrain.enableTeleop(true);
 		climber.enableTeleop(true);
@@ -282,9 +308,10 @@ public class Robot extends IterativeRobot {
 				// left axis = 1, right axis = 5
 				double leftSpeed = -joystick.getRawAxis(1);
 				double rightSpeed = -joystick.getRawAxis(5);
-				driveTrain.driveLeftCurved(!deadZone || Math.abs(leftSpeed) > 0.15 ? leftSpeed * (fullPower ? 1 : 0.5) : 0);
-				driveTrain
-					.driveRightCurved(!deadZone || Math.abs(rightSpeed) > 0.15 ? rightSpeed * (fullPower ? 1 : 0.5) : 0);
+				//noinspection ConstantConditions
+				driveTrain.driveLeftCurved(!DEAD_ZONE || Math.abs(leftSpeed) > 0.15 ? leftSpeed * (fullPower ? 1 : 0.5) : 0);
+				//noinspection ConstantConditions
+				driveTrain.driveRightCurved(!DEAD_ZONE || Math.abs(rightSpeed) > 0.15 ? rightSpeed * (fullPower ? 1 : 0.5) : 0);
 			}
 		} else if (waitingForTeleop || killSwitch()) {
 			// this means that the auto period has just ended, teleop has just started, but the auto routine is still

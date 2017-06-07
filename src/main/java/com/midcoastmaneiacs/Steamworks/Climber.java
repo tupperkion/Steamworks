@@ -7,7 +7,8 @@ public class Climber extends MMSubsystem {
 	public final SpeedController climber = new Spark(3);
 
 	public void set(double speed) {
-		climber.set(speed);
+		if (verifyResponse())
+			climber.set(speed);
 	}
 
 	@Override

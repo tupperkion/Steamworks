@@ -14,12 +14,9 @@ public class Vision {
 	/** distance from middle of bot to camera */
 	private static final double c = 8.5d;
 
-	public static boolean inited = false;
-
 	public static void init() {
 		NetworkTable.initialize();
 		table = NetworkTable.getTable("vision");
-		inited = true;
 	}
 
 	/** is the vision code ready and running? */

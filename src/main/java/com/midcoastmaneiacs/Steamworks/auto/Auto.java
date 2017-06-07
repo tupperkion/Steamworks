@@ -1,13 +1,17 @@
 package com.midcoastmaneiacs.Steamworks.auto;
 
 import com.midcoastmaneiacs.Steamworks.Robot;
-import com.midcoastmaneiacs.Steamworks.Scheduler;
-import edu.wpi.first.wpilibj.command.CommandGroup;
 
+@SuppressWarnings("WeakerAccess")
 public class Auto extends MMCommand {
-	/** modes: 0 = gear, 1 = surge, 2 = play dead */
-	byte mode;
-	public Auto(byte mode) {
+	public enum Mode {
+		PLAY_DEAD,
+		SURGE,
+		GEAR
+	}
+
+	public final Mode mode;
+	public Auto(Mode mode) {
 		this.mode = mode;
 	}
 
@@ -15,13 +19,11 @@ public class Auto extends MMCommand {
 	protected void initialize() {
 		Robot.driveTrain.takeControl(this);
 		switch(mode) {
-			case(0):
+			case GEAR:
 				switch (Robot.starting) {
 					case (1):
 					case (3):
-						(new Series((new DriveCommand(-0.5, 0.5)),
-									  (new DriveCommand(0, 0)),
-									  (new Gear(true)))).start();
+						(new Series((new DriveCommand(-0.5, 0.5)), (new Gear(true)))).start();
 						break;
 					case (2):
 					default:
@@ -29,17 +31,15 @@ public class Auto extends MMCommand {
 						break;
 				}
 				break;
-			case(1):
-				(new DriveCommand(-0.6, 2)).start();
+			case SURGE:
+				if (Robot.starting == 2)
+					System.err.println("WARNING: Surge cancelled due to illegal starting position!");
+				else
+					(new DriveCommand(-0.6, 2)).start();
 				break;
 			default:
 				break;
 		}
-	}
-
-	@Override
-	protected void end() {
-		Robot.driveTrain.relinquishControl(this);
 	}
 
 	@Override

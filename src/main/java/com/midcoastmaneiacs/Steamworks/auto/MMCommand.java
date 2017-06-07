@@ -18,24 +18,26 @@ import edu.wpi.first.wpilibj.command.Command;
  * considered an "active command," while a {@link Command} that is <em>not</em> an MMCommand (such as a
  * {@link com.midcoastmaneiacs.Steamworks.Notifier Notifier}) is considered a "passive command."
  */
+@SuppressWarnings("WeakerAccess")
 public abstract class MMCommand extends Command {
-	private MMCommand parent;
-
-	public Command getParent() {
-		return parent;
-	}
+	/** Parent of the command. Should only be modified internally by MMCommand and by {@link Scheduler}. */
+	public MMCommand parent;
 
 	public boolean controls(MMSubsystem subsystem) {
 		return subsystem.directlyControlledBy(this) || this.parent != null && parent.controls(subsystem);
 	}
 
+	/**
+	 * {@inheritDoc}
+	 *
+	 * Uses the {@link Scheduler Midcoast Maineiacs Scheduler}. Passive commands are not allowed to start active
+	 * commands, but any command <em>can</em> be started outside of a Command all together.
+	 *
+	 * @throws Scheduler.IllegalPassiveCommandException if started by a passive command
+	 */
 	@Override
 	public void start() {
 		Scheduler.add(this);
-		if (Scheduler.currentCommand instanceof MMCommand)
-			parent = (MMCommand) Scheduler.currentCommand;
-		else
-			parent = null;
 	}
 
 	/**
@@ -51,11 +53,20 @@ public abstract class MMCommand extends Command {
 	}
 
 	/**
-	 * @return If the command has been timed out, or the kill switch has been activated. This should suffice in many
-	 * cases, but if you choose to override it, you should reference super.isFinished().
+	 * @return If the command has been timed out, or the kill switch has been activated, or the parent has stopped. This
+	 * should suffice in many cases, but if you choose to override it, you should reference super.isFinished() or
+	 * {@link MMCommand#shouldCancel()}.
 	 */
 	@Override
 	protected boolean isFinished() {
-		return isTimedOut() || Robot.killSwitch();
+		return isTimedOut() || shouldCancel();
+	}
+
+	/**
+	 * @return If the kill switch has been activited, or the parent has been stopped. Use this if you want to override
+	 * {@link MMCommand#isFinished()} to follow these rules without cancelling on timeout.
+	 */
+	protected boolean shouldCancel() {
+		return Robot.killSwitch() || parent != null && !parent.isRunning() && parent.isCanceled();
 	}
 }

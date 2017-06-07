@@ -74,7 +74,7 @@ public class DriveTrain extends MMSubsystem {
 	}
 
 	@Override
-	public boolean relinquishControl(Command command) {
+	public boolean relinquishControl(MMCommand command) {
 		boolean changed = super.relinquishControl(command);
 		// if changed is true, setState will be called anyway so we don't need to call it, hence "!changed" here
 		if (!changed && command == autopilotCommand)
@@ -87,7 +87,7 @@ public class DriveTrain extends MMSubsystem {
 	}
 
 	public void driveLeft(double speed) {
-		if (willRespond()) {
+		if (verifyResponse()) {
 			lastLeftSpeed = speed;
 			left.set(speed);
 			if (!Notifier.isNotifying() && Math.abs(speed) >= 0.15 && Robot.rumble.getSelected())
@@ -98,7 +98,7 @@ public class DriveTrain extends MMSubsystem {
 	}
 
 	public void driveRight(double speed) {
-		if (willRespond()) {
+		if (verifyResponse()) {
 			lastRightSpeed = speed;
 			right.set(-speed);
 			if (!Notifier.isNotifying() && Math.abs(speed) >= 0.15 && Robot.rumble.getSelected())
@@ -211,14 +211,10 @@ public class DriveTrain extends MMSubsystem {
 	@SuppressWarnings("FieldCanBeLocal")
 	private static final double STABILIZATION_CONSTANT = 0.01;
 
-	public void updateAutopilot() {
+	public void updateAutopilot() { // TODO: test positive and negative autopilot
 		double error = getTurningAngle(wantedHeading);
 		double left = speed;
 		double right = speed;
-		/*if (turningRadius != Double.MAX_VALUE) {
-			left = speed * (1 + (ROBOT_WIDTH / (2 * turningRadius)));
-			right = speed - (1 + (ROBOT_WIDTH / (2 * turningRadius)));
-		}(*/
 		left += error * STABILIZATION_CONSTANT;
 		right -= error * STABILIZATION_CONSTANT;
 		drive(left, right);
@@ -226,7 +222,7 @@ public class DriveTrain extends MMSubsystem {
 
 	public enum State {
 		TELEOP, // teleoperator control
-		AUTOPILOT, // controlled by autopilot() method in DriveTrain.java
+		AUTOPILOT, // controlled by updateAutopilot() (called by Scheduler)
 		COMMAND, // controlled by command
 		DISABLED // disabled
 	}

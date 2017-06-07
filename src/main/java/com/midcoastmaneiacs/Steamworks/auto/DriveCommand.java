@@ -2,15 +2,12 @@ package com.midcoastmaneiacs.Steamworks.auto;
 
 import com.midcoastmaneiacs.Steamworks.Robot;
 
-import com.midcoastmaneiacs.Steamworks.Scheduler;
-import edu.wpi.first.wpilibj.command.Command;
-
 public class DriveCommand extends MMCommand {
-	private boolean autopilot;
+	private final boolean autopilot;
 	private double left;
 	private double right;
 	private double speed;
-	private double time;
+	private final double time;
 
 	/**
 	 * Drives the robot straight, using the autopilot gyro stabilization.

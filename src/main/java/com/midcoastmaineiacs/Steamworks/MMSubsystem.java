@@ -10,7 +10,6 @@ import edu.wpi.first.wpilibj.command.Subsystem;
 @SuppressWarnings("WeakerAccess")
 public abstract class MMSubsystem extends Subsystem {
 	private MMCommand controllingCommand = null;
-	private boolean controlledByTeleop = false;
 
 	/**
 	 * If true, should only respond to updates if either A) Scheduler.currentCommand == controllingCommand or B)
@@ -91,7 +90,7 @@ public abstract class MMSubsystem extends Subsystem {
 	 * @return true if teleoperator controls should be allowed to effect the Subsystem.
 	 */
 	public boolean controlledByTeleop() {
-		return controlledByTeleop && controllingCommand == null;
+		return Scheduler.teleop && controllingCommand == null;
 	}
 
 	/**
@@ -108,8 +107,7 @@ public abstract class MMSubsystem extends Subsystem {
 	 * @return true if the subsystem should respond to the method that called this method
 	 */
 	public boolean willRespond() {
-		return controlledBy(null) || !enforceControl ||
-				   Scheduler.getCurrentCommand() instanceof MMCommand && controlledBy((MMCommand) Scheduler.getCurrentCommand());
+		return Scheduler.enabled && (controlledBy(null) || !enforceControl || Scheduler.getCurrentCommand() instanceof MMCommand && controlledBy((MMCommand) Scheduler.getCurrentCommand()));
 	}
 
 	/**
@@ -127,9 +125,7 @@ public abstract class MMSubsystem extends Subsystem {
 		return false;
 	}
 
-	public void enableTeleop(boolean control) {
-		controlledByTeleop = control;
-	}
+	public void enableTeleop(boolean enabled) {}
 
 	/**
 	 * Stop all motors.

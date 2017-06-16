@@ -12,7 +12,7 @@ public class Vision {
 	private static final int cameraWidth = 480;
 
 	/** distance from middle of bot to camera */
-	private static final double c = 8.5d;
+	private static final double c = 11.5d;
 
 	public static void init() {
 		NetworkTable.initialize();

@@ -1,6 +1,7 @@
 package com.midcoastmaineiacs.Steamworks.auto;
 
 import com.midcoastmaineiacs.Steamworks.Robot;
+import edu.wpi.first.wpilibj.DriverStation;
 
 @SuppressWarnings("WeakerAccess")
 public class Auto extends MMCommand {
@@ -17,6 +18,7 @@ public class Auto extends MMCommand {
 
 	@Override
 	protected void initialize() {
+		System.out.println(Thread.currentThread());
 		Robot.driveTrain.takeControl(this);
 		switch(mode) {
 			case GEAR:
@@ -33,7 +35,7 @@ public class Auto extends MMCommand {
 				break;
 			case SURGE:
 				if (Robot.starting == 2)
-					System.err.println("WARNING: Surge cancelled due to illegal starting position!");
+					DriverStation.reportError("Surge cancelled due to illegal starting position!", false);
 				else
 					(new DriveCommand(-0.6, 2)).start();
 				break;

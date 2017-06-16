@@ -44,13 +44,22 @@ public class DriveCommand extends MMCommand {
 			setTimeout(2);
 			Robot.driveTrain.setAutopilot(-0.6);
 		}*/
-		setTimeout(time);
+		timeout(time);
 		if (autopilot) {
 			//Robot.driveTrain.setAutopilot(speed);
 			Robot.driveTrain.takeControl(this);
 			Robot.driveTrain.drive(speed); // TODO: change to go back to using autopilot
 		} else {
 			Robot.driveTrain.takeControl(this);
+			Robot.driveTrain.drive(left, right);
+		}
+	}
+
+	@Override
+	public void resume() {
+		if (autopilot) {
+			Robot.driveTrain.drive(speed); // TODO: remove
+		} else {
 			Robot.driveTrain.drive(left, right);
 		}
 	}

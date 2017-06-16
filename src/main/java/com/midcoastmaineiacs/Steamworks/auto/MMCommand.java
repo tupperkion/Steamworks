@@ -28,12 +28,17 @@ import java.util.List;
 public abstract class MMCommand extends Command {
 	/** Parent of the command. Should only be modified internally by MMCommand and by {@link Scheduler}. */
 	public MMCommand parent;
+	/** Only to be used by the scheduler */
+	public boolean enabled = true;
+	/** How much time is left to run the command, not counting disabled time */
+	private double timeLeft = -1;
+	public boolean hasRun = true;
 
 	public boolean controls(MMSubsystem subsystem) {
 		return subsystem.directlyControlledBy(this) || this.parent != null && parent.controls(subsystem);
 	}
 
-	private boolean requireChildren = false;
+	protected boolean requireChildren = false;
 	/** List of commands spawned (directly or indirectly) by this command. */
 	public List<MMCommand> children = new ArrayList<>();
 
@@ -47,6 +52,8 @@ public abstract class MMCommand extends Command {
 	 */
 	@Override
 	public void start() {
+		requireChildren = false;
+		children.clear();
 		Scheduler.add(this);
 	}
 
@@ -58,8 +65,10 @@ public abstract class MMCommand extends Command {
 	@Override
 	protected void end() {
 		for (MMSubsystem i: Robot.subsystems)
-			if (i.relinquishControl(this))
+			if (i.controlledBy(this)) {
+				i.relinquishControl(this);
 				i.stop();
+			}
 	}
 
 	/**
@@ -74,7 +83,7 @@ public abstract class MMCommand extends Command {
 
 	/**
 	 * @return If the kill switch has been activited, or the parent has been stopped. Use this if you want to override
-	 * {@link MMCommand#isFinished()} to follow these rules without cancelling on timeout.
+	 * {@link MMCommand#isFinished()} to follow these rules without cancelling on timeLeft.
 	 */
 	protected boolean shouldCancel() {
 		if (requireChildren) {
@@ -94,5 +103,37 @@ public abstract class MMCommand extends Command {
 	 */
 	public void releaseForChildren() {
 		requireChildren = true;
+	}
+
+	/**
+	 * Called when a command is resumed, after the scheduler has been disabled, and re-enabled. Assume all subsystems have
+	 * been stopped by the scheduler at this point.
+	 */
+	public void resume() {}
+
+	/**
+	 * Sets a timeout in such a way that it will be paused when the command is frozen (e.g. by a disabled). This should
+	 * be used instead of {@link Command#setTimeout(double) setTimeout()} most of the time.
+	 *
+	 * @param time Time to expire the command, in seconds.
+	 * @see Command#setTimeout(double)
+	 */
+	public void timeout(double time) {
+		if (enabled)
+			setTimeout(time);
+		timeLeft = time;
+	}
+
+	/**
+	 * Called by scheduler when state of enabled changes, used to pause/resume timeouts
+	 */
+	public void updateTimeout() {
+		if (timeLeft != -1) {
+			if (!enabled) {
+				timeLeft = timeLeft - timeSinceInitialized();
+				setTimeout(-1);
+			} else
+				setTimeout(timeLeft + timeSinceInitialized());
+		}
 	}
 }

@@ -33,4 +33,13 @@ public class MMAccessProxy {
 	public static void commandRemoved(Command command) {
 		command.removed();
 	}
+
+	/**
+	 * Provides public access to {@link Command#isFinished()}.
+	 *
+	 * @see Command#isFinished()
+	 */
+	public static boolean commandIsFinished(Command command) {
+		return command.isFinished();
+	}
 }

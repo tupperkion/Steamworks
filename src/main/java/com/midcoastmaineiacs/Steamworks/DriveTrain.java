@@ -30,8 +30,8 @@ public class DriveTrain extends MMSubsystem {
 	public void setAutopilot(double speed) {
 		if (Scheduler.getCurrentCommand() != null && Scheduler.getCurrentCommand() instanceof MMCommand) {
 			setState(State.AUTOPILOT);
-			takeControl((MMCommand) Scheduler.getCurrentCommand());
 			autopilotCommand = (MMCommand) Scheduler.getCurrentCommand();
+			takeControl((MMCommand) Scheduler.getCurrentCommand());
 			wantedHeading = getGyroMod();
 			this.speed = speed;
 		} else if (Scheduler.getCurrentCommand() != null)
@@ -41,7 +41,7 @@ public class DriveTrain extends MMSubsystem {
 	}
 
 	private void setState(State state) {
-		System.err.println(state);
+		System.out.println("Setting DriveTrain state: " + state);
 		if (this.state != state && ((this.state != State.AUTOPILOT && this.state != State.COMMAND) || (state != State.AUTOPILOT && state != State.COMMAND)))
 			Robot.notifyDriver();
 		if (state != State.AUTOPILOT) autopilotCommand = null;
@@ -52,17 +52,17 @@ public class DriveTrain extends MMSubsystem {
 		return state;
 	}
 
-	@Override
 	public void enableTeleop(boolean control) {
-		super.enableTeleop(control);
 		if (control && state == State.DISABLED)
 			setState(State.TELEOP);
 		else if (!control && state == State.TELEOP)
-			setState(controlledBy(null) ? State.DISABLED : State.COMMAND);
+			setState(State.DISABLED);
 	}
 
 	@Override
 	public void takeControl(MMCommand command) {
+		if (command != null && state == State.AUTOPILOT && !autopilotInitiatedByCommand(command))
+			setState(State.COMMAND);
 		super.takeControl(command);
 		if (command != null && state != State.AUTOPILOT && state != State.COMMAND)
 			setState(State.COMMAND);
@@ -74,24 +74,38 @@ public class DriveTrain extends MMSubsystem {
 		}
 	}
 
+	/**
+	 * Checks if this command, or any of its descendants, is the one that initiated autopilot.
+	 * @param command Command to check
+	 * @return True if the DriveTrain is in autopilot mode, and this command or an ancestor is the one that set the mode.
+	 */
+	private boolean autopilotInitiatedByCommand(MMCommand command) {
+		if (getState() != State.AUTOPILOT) return false;
+		if (autopilotCommand == command) return true;
+		for (MMCommand i: command.children) {
+			if (autopilotInitiatedByCommand(i)) return true;
+		}
+		return false;
+	}
+
 	@Override
 	public boolean relinquishControl(MMCommand command) {
 		boolean changed = super.relinquishControl(command);
 		// if changed is true, setState will be called anyway so we don't need to call it, hence "!changed" here
-		if (!changed && command == autopilotCommand)
+		if (!changed && autopilotInitiatedByCommand(command))
 			setState(controlledBy(null) ? (controlledByTeleop() ? State.TELEOP : State.DISABLED) : State.COMMAND);
 		return changed;
 	}
 
 	public DriveTrain() {
-		gyro.setSensitivity(2d / 300000);
+		gyro.setSensitivity(2d / 300);
 	}
 
 	public void driveLeft(double speed) {
 		if (verifyResponse()) {
 			lastLeftSpeed = speed;
 			left.set(speed);
-			if (!Notifier.isNotifying() && Math.abs(speed) >= 0.15 && Robot.rumble.getSelected())
+			if (!Notifier.isNotifying() && Math.abs(speed) >= 0.15)
 				Robot.joystick.setRumble(RumbleType.kLeftRumble, Math.abs(speed));
 			else if (!Notifier.isNotifying())
 				Robot.joystick.setRumble(RumbleType.kLeftRumble, 0);
@@ -102,7 +116,7 @@ public class DriveTrain extends MMSubsystem {
 		if (verifyResponse()) {
 			lastRightSpeed = speed;
 			right.set(-speed);
-			if (!Notifier.isNotifying() && Math.abs(speed) >= 0.15 && Robot.rumble.getSelected())
+			if (!Notifier.isNotifying() && Math.abs(speed) >= 0.15)
 				Robot.joystick.setRumble(RumbleType.kRightRumble, Math.abs(speed));
 			else if (!Notifier.isNotifying())
 				Robot.joystick.setRumble(RumbleType.kRightRumble, 0);
@@ -164,6 +178,20 @@ public class DriveTrain extends MMSubsystem {
 
 	public void drive(double speed) {
 		drive(speed, speed);
+	}
+
+	@Override
+	public boolean willRespond() {
+		boolean autopilot = false;
+		if (state == State.AUTOPILOT && Scheduler.enabled) {
+			StackTraceElement[] stack = Thread.currentThread().getStackTrace();
+			for (StackTraceElement i: stack)
+				if (i.getMethodName().equals("updateAutopilot")) {
+					autopilot = true;
+					break;
+				}
+		}
+		return autopilot || super.willRespond();
 	}
 
 	@Override

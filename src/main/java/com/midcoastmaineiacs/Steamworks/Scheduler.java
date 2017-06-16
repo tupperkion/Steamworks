@@ -24,6 +24,8 @@ import java.util.TimerTask;
 @SuppressWarnings("WeakerAccess")
 public class Scheduler extends TimerTask {
 	public static boolean enabled = false;
+	/** is teleop enabled? */
+	public static boolean teleop = false;
 	private static final List<Command> schedule = new ArrayList<>();
 	public static Command currentCommand;
 
@@ -35,6 +37,13 @@ public class Scheduler extends TimerTask {
 			Command command = schedule.get(i);
 			currentCommand = command;
 
+			if (command instanceof MMCommand && !command.willRunWhenDisabled()) {
+				MMCommand c = (MMCommand) command;
+				if (c.enabled != enabled) c.updateTimeout(); // TODO: test timeouts
+				if (!c.enabled && enabled) c.resume();
+				c.enabled = enabled;
+			}
+
 			// A) allows code to "disable" and B) prevents commands from getting cancelled, just "paused"
 			// I expect the Robot ...init() methods to cancel commands as necessary
 			// However, add an exception to allow commands to end if they are cancelled
@@ -43,11 +52,13 @@ public class Scheduler extends TimerTask {
 			// check if the command is cancelled, as command.run won't check if it's cancelled after initialize() and
 			// execute() are called, until the next run, so this allows a command to immediately cancel itself in favor
 			// of running a different command without relying on isFinished()
-			if (!MMAccessProxy.runCommand(command) || command.isCanceled()) {
+			if ((command instanceof MMCommand && ((MMCommand) command).hasRun && MMAccessProxy.commandIsFinished(command))
+					|| !MMAccessProxy.runCommand(command) || command.isCanceled()) {
 				schedule.remove(i);
 				i--;
 				MMAccessProxy.commandRemoved(command);
 			}
+			if (command instanceof MMCommand) ((MMCommand) command).hasRun = true;
 		}
 		currentCommand = null;
 		if (enabled && Robot.driveTrain.getState() == DriveTrain.State.AUTOPILOT)
@@ -81,9 +92,10 @@ public class Scheduler extends TimerTask {
 																	   "Modify the command class to extend MMCommand!");
 			else
 				((MMCommand) command).parent = null;
+			((MMCommand) command).hasRun = false;
 		}
-		schedule.add(command);
 		MMAccessProxy.startRunningCommand(command);
+		schedule.add(command);
 	}
 
 	/**
@@ -106,11 +118,19 @@ public class Scheduler extends TimerTask {
 			i.takeControl(null);
 	}
 
+	public static void enableTeleop(boolean enabled) {
+		if (teleop == enabled) return;
+		teleop = enabled;
+		for (MMSubsystem i: Robot.subsystems) {
+			i.enableTeleop(enabled);
+		}
+	}
+
 	/**
 	 * @return The command that called this method, or null if no command led to this method being called
 	 */
 	public static Command getCurrentCommand() {
-		if (Thread.currentThread() == Robot.mainThread) System.out.println("A command is being processed while the robot is ticking!"); // TODO: Delete after testing
+		System.out.println(Thread.currentThread() + " " + Robot.mainThread);
 		return Thread.currentThread() == Robot.mainThread ? null : currentCommand;
 	}
 
@@ -147,7 +167,7 @@ public class Scheduler extends TimerTask {
 	 * </li></ul>
 	 * If a Command needs to do either of these, they <em>must</em> be considered active commands and extend MMCommand.
 	 */
-	public static class IllegalPassiveCommandException extends RuntimeException {
+	public static class IllegalPassiveCommandException extends CommandException {
 		public IllegalPassiveCommandException(String message) {
 			super(message);
 		}

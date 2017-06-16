@@ -44,8 +44,6 @@ public class Notifier extends Command {
 
 	@Override
 	public void end() {
-		if (timeLeft < 0)
-			timeLeft = 0;
 		Robot.joystick.setRumble(GenericHID.RumbleType.kLeftRumble, 0);
 		Robot.joystick.setRumble(GenericHID.RumbleType.kRightRumble, 0);
 	}

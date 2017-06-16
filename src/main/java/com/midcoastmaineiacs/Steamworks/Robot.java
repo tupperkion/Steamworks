@@ -1,6 +1,7 @@
 package com.midcoastmaineiacs.Steamworks;
 
 import com.midcoastmaineiacs.Steamworks.auto.Auto;
+import com.midcoastmaineiacs.Steamworks.auto.Gear;
 import com.midcoastmaineiacs.Steamworks.auto.MMCommand;
 import com.midcoastmaineiacs.Steamworks.auto.Vision;
 import edu.wpi.first.wpilibj.*;
@@ -12,7 +13,6 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
-import java.util.TimerTask;
 
 @SuppressWarnings("WeakerAccess")
 public class Robot extends IterativeRobot { // TODO: Test changes resulting from mainThread introduction
@@ -32,8 +32,6 @@ public class Robot extends IterativeRobot { // TODO: Test changes resulting from
 	public static SendableChooser<Byte> pos;
 	/** Chosen auto routine */
 	public static SendableChooser<Command> autochooser;
-	/** Some drivers may prefer rumble to be off, hence the toggle */
-	public static SendableChooser<Boolean> rumble;
 
 	public static DriveTrain driveTrain;
 	public static Climber climber;
@@ -96,10 +94,6 @@ public class Robot extends IterativeRobot { // TODO: Test changes resulting from
 		autochooser.addObject("Gear", new Auto(Auto.Mode.GEAR));
 		autochooser.addObject("Mobility", new Auto(Auto.Mode.SURGE));
 		autochooser.addDefault("Play dead", new Auto(Auto.Mode.PLAY_DEAD));
-		rumble = new SendableChooser<>();
-		rumble.addDefault("Rumble On", true);
-		rumble.addObject("Rumble Off", false);
-		SmartDashboard.putData("Rumble", rumble);
 		SmartDashboard.putData("Position", pos);
 		SmartDashboard.putData("Auto", autochooser);
 
@@ -119,7 +113,7 @@ public class Robot extends IterativeRobot { // TODO: Test changes resulting from
 		// good to go, start the scheduler
 		clock = new Timer(true);
 		clock.scheduleAtFixedRate(new Scheduler(), 0, 20);
-		System.err.println("All systems go!");
+		System.out.println("All systems go!");
 	}
 
 	/** time / 20ms since last frame from rPi */
@@ -131,6 +125,7 @@ public class Robot extends IterativeRobot { // TODO: Test changes resulting from
 	@Override
 	public void robotPeriodic() {
 		SmartDashboard.putBoolean("Competition mode", competition);
+		SmartDashboard.putBoolean("Enabled", Scheduler.enabled);
 
 		// report DriveTrain state
 		SmartDashboard.putBoolean(" Disabled", driveTrain.getState() == DriveTrain.State.DISABLED);
@@ -178,12 +173,13 @@ public class Robot extends IterativeRobot { // TODO: Test changes resulting from
 	@Override
 	public void disabledInit() {
 		Scheduler.enabled = false;
-		driveTrain.enableTeleop(false);
+		Scheduler.enableTeleop(false);
 		for (MMSubsystem i: subsystems)
 			i.stop();
 		if (!competition)
 			Scheduler.cancelAllCommands();
 		SmartDashboard.putBoolean("Endgame", false);
+		endgamePassed = false;
 	}
 
 	//////////
@@ -209,6 +205,7 @@ public class Robot extends IterativeRobot { // TODO: Test changes resulting from
 		}
 		driveTrain.gyro.reset();
 		Scheduler.enabled = true;
+		Scheduler.enableTeleop(false);
 		auto = autochooser.getSelected();
 		starting = pos.getSelected();
 		if (auto != null)
@@ -241,8 +238,12 @@ public class Robot extends IterativeRobot { // TODO: Test changes resulting from
 	 *
 	 * The following will always be mapped, but aren't likely to be used during comp
 	 *
-	 * A  Kill routines (may become useful if routines become used during teleop)
 	 * X  Reverse climber (50%, to be used during demonstrations and testing, not during comp)
+	 *
+	 * Notifiers:
+	 *
+	 * Endgame
+	 * DriveTrain state change (from/to DISABLED or TELEOP)
 	 */
 
 	private static boolean lbWasPressed = false;
@@ -252,6 +253,8 @@ public class Robot extends IterativeRobot { // TODO: Test changes resulting from
 	private static final boolean DEAD_ZONE = true;
 	/** true = teleop is enabled but the driver hasn't gotten control yet */
 	private static boolean waitingForTeleop = true;
+	/** Have we notified the driver of endgame since last disable? */
+	private static boolean endgamePassed = false;
 
 	@Override
 	public void teleopInit() {
@@ -266,8 +269,7 @@ public class Robot extends IterativeRobot { // TODO: Test changes resulting from
 				competition = willEnableCompetition;
 		}
 		Scheduler.enabled = true;
-		driveTrain.enableTeleop(true);
-		climber.enableTeleop(true);
+		Scheduler.enableTeleop(true);
 		waitingForTeleop = !driveTrain.controlledByTeleop();
 
 		if (!competition) {
@@ -278,7 +280,7 @@ public class Robot extends IterativeRobot { // TODO: Test changes resulting from
 			notifyDriver();
 		}*/
 
-		SmartDashboard.putBoolean("Endgame", false);
+		/*SmartDashboard.putBoolean("Endgame", false);
 		(new Timer()).schedule(new TimerTask() {
 			@Override
 			public void run() {
@@ -290,25 +292,27 @@ public class Robot extends IterativeRobot { // TODO: Test changes resulting from
 			}
 			// using edu.wpilib.first.wpilibj.Timer is based on how long teleop has been enabled, not the match
 			// configuration, so this will alert the driver at the right time even when not in practice or FMS mode
-		}, (long) ((edu.wpi.first.wpilibj.Timer.getMatchTime() + 150 - ENDGAME) * 1000));
+		}, (long) ((edu.wpi.first.wpilibj.Timer.getMatchTime() + 150 - ENDGAME) * 1000));*/
 	}
 
 	@Override
-	public void teleopPeriodic() {
-		// speed toggle
-		if (!lbWasPressed && joystick.getRawButton(5)) { // LB
-			lbWasPressed = true;
-			fullPower = !fullPower;
-		} else if (lbWasPressed && !joystick.getRawButton(5)) {
-			lbWasPressed = false;
+	public void teleopPeriodic() { // TODO: test kill switch
+		// TODO: test endgame notification and reset on disable
+		// Endgame notification
+		if (!endgamePassed && DriverStation.getInstance().getMatchTime() > 0 && DriverStation.getInstance().getMatchTime() <= ENDGAME) {
+			SmartDashboard.putBoolean("Endgame", true);
+			endgamePassed = true;
+			notifyDriver();
 		}
 
+		if (!Scheduler.enabled) return;
+		// DriveTrain control
 		if (driveTrain.controlledByTeleop()) {
 			waitingForTeleop = false;
-			if (joystick.getPOV() != -1) {
-				double forward = Math.cos(Math.toRadians(joystick.getPOV()));
-				double turn = Math.sin(Math.toRadians(joystick.getPOV())) + joystick.getRawAxis(4); // 4 = right X
-				driveTrain.driveArcade(forward * -joystick.getZ(), turn * -joystick.getZ());
+			if (joystick.getPOV() != -1) { // TODO: test POV driving
+				double forward = -Math.cos(Math.toRadians(joystick.getPOV()));
+				double turn = -Math.sin(Math.toRadians(joystick.getPOV())) + joystick.getRawAxis(4); // 4 = right X
+				driveTrain.driveArcade(forward * -joystick.getRawAxis(2), turn * -joystick.getRawAxis(2));
 			} else {
 				// left axis = 1, right axis = 5
 				double leftSpeed = -joystick.getRawAxis(1);
@@ -319,22 +323,24 @@ public class Robot extends IterativeRobot { // TODO: Test changes resulting from
 				driveTrain.driveRightCurved(!DEAD_ZONE || Math.abs(rightSpeed) > 0.15 ? rightSpeed * (fullPower ? 1 : 0.5) : 0);
 			}
 			if (joystick.getRawButton(4)) {
-				autochooser.getSelected().start();
-				driveTrain.takeControl((MMCommand) autochooser.getSelected());
+				//autochooser.getSelected().start();
+				MMCommand command = new Gear(true);
+				driveTrain.takeControl(command);
 			}
-		} else if (waitingForTeleop || killSwitch()) {
+		} else
+
+		// Auto take-over
+		if (waitingForTeleop /*|| killSwitch() should be handled by commands themselves */) {
 			// this means that the auto period has just ended, teleop has just started, but the auto routine is still
 			// running, waiting for the driver to manually take control, or the driver is holding down A, so autonomous
 			// commands started during teleop need to be killed.
-			if (Math.abs(joystick.getRawAxis(1)) >= 0.9 && Math.abs(joystick.getRawAxis(5)) >= 0.9 || killSwitch()) {
+			if (Math.abs(joystick.getRawAxis(1)) >= 0.9 && Math.abs(joystick.getRawAxis(5)) >= 0.9 /*|| killSwitch()*/) { // TODO: test take-ver
 				Scheduler.cancelAllCommands();
-				driveTrain.enableTeleop(true);
-				driveTrain.takeControl(null); // ensure teleop has control
-				notifyDriver();
 				waitingForTeleop = false;
 			}
 		}
 
+		// Climber control
 		if (climber.controlledByTeleop()) {
 			if (joystick.getRawButton(6)) // RB
 				climber.set(1);
@@ -343,7 +349,18 @@ public class Robot extends IterativeRobot { // TODO: Test changes resulting from
 			else if (joystick.getRawButton(3)) // X
 				climber.set(-0.5);
 			else if (joystick.getPOV() == -1)
-				climber.set(-joystick.getZ());
+				climber.set(joystick.getRawAxis(2) - joystick.getRawAxis(3));
+		}
+	}
+
+	@Override
+	public void disabledPeriodic() {
+		// speed toggle TODO: test during teleop and disabled
+		if (!lbWasPressed && joystick.getRawButton(5)) { // LB
+			lbWasPressed = true;
+			fullPower = !fullPower;
+		} else if (lbWasPressed && !joystick.getRawButton(5)) {
+			lbWasPressed = false;
 		}
 	}
 
@@ -358,10 +375,6 @@ public class Robot extends IterativeRobot { // TODO: Test changes resulting from
 	public void testPeriodic() {
 		LiveWindow.run();
 	}
-
-	// get wpilib to shut up about overriding these methods
-	@Override
-	public void disabledPeriodic() {}
 	@Override
 	public void autonomousPeriodic() {}
 }

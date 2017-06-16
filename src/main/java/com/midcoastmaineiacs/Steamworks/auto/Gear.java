@@ -20,7 +20,6 @@ public class Gear extends MMCommand {
 	public final boolean scan;
 	// have I found the vision targets?
 	public boolean found;
-	private MMCommand child;
 
 	/**
 	 * A {@link Command} which:
@@ -64,22 +63,22 @@ public class Gear extends MMCommand {
 				Robot.driveTrain.drive(-0.4, 0);
 			}
 		}
-		if (found && Robot.driveTrain.controlledBy(this)) {
+		if (found && !requireChildren) {
 			if (Vision.izgud()) {
 				//double distance = Vision.getDistance();
 				//if (distance > 12) {
 				double error = Vision.getTurningAngle();
 				SmartDashboard.putNumber("Debug", error);
 				if (error < -30) {
-					Robot.driveTrain.drive(-0.4, 0);
+					Robot.driveTrain.drive(-0.3, 0);
 				} else if (error < -5) {
-					Robot.driveTrain.drive(-0.6, -0.4);
+					Robot.driveTrain.drive(-0.3, -0.2);
 				} else if (error < 5) {
-					Robot.driveTrain.drive(-0.6);
+					Robot.driveTrain.drive(-0.3);
 				} else if (error < 30) {
-					Robot.driveTrain.drive(-0.4, -0.6);
+					Robot.driveTrain.drive(-0.2, -0.3);
 				} else {
-					Robot.driveTrain.drive(0, -0.4);
+					Robot.driveTrain.drive(0, -0.3);
 				}
 				//} else {
 				//	if (!timing) {
@@ -96,13 +95,13 @@ public class Gear extends MMCommand {
 				Robot.driveTrain.drive(0.4);*/
 				// relinquishing control will cause this to stop running the loop, but the command will stay "running"
 				// in order to prevent the child commands from being cancelled
-				child = (new Series(new DriveCommand(-0.4, 0.5), new DriveCommand(-0.4, 0.25)));
-				child.start();
+				(new Series(new DriveCommand(-0.2, 0.5), new DriveCommand(0.2, 0.25))).start();
+				releaseForChildren();
 			}
 		}
 	}
 
 	public boolean isFinished() {
-		return super.isFinished() || !Robot.driveTrain.controlledBy(this) || !Vision.isalive() || !scan && !found || !(child == null || child.isRunning());
+		return super.isFinished() || !Robot.driveTrain.controlledBy(this) || !Vision.isalive() || !scan && !found;
 	}
 }

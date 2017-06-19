@@ -176,7 +176,11 @@ public class Robot extends IterativeRobot { // TODO: Test changes resulting from
 		Scheduler.enableTeleop(false);
 		for (MMSubsystem i: subsystems)
 			i.stop();
-		if (!competition)
+		if (competition)
+			DriverStation.reportWarning("Competition mode activated, commands not cancelled. " +
+											"If you are at a competition or practice match, this is normal. " +
+											"Otherwise, tell a programmer.", false);
+		else
 			Scheduler.cancelAllCommands();
 		SmartDashboard.putBoolean("Endgame", false);
 		endgamePassed = false;

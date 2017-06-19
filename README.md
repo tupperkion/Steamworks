@@ -1,5 +1,9 @@
 # Jeffrey `v3.0`
 
+#### _Drivers:_ look at the [Driving](#driving) section at the end.
+
+> Everywhere else in this document is intended for programmers.
+
 The latest version of the Jeffrey robot code changes the function of the code at a fundamental level. It takes what wpilib already provides with command-based programming, and builds on top of it adding a swarm of new features. With that said, it is highly recommended that any new programmers read the following sections of the wpilib documentation:
 
  1. [Using actuators (motors, servos, and relays)](https://wpilib.screenstepslive.com/s/4485/m/13809/c/88897)
@@ -94,11 +98,13 @@ The `MMCommand` class adds a host of new features:
  - When one command starts another, commands will keep track of what command started them (their parents) and what commands they start (their children).
  - Commands can take control of subsystems. When a command has control, this guarantees that nothing but that command can take control of the subsystem. When a command has control of a subsystem, that implies that all of it's children also have control. It is recommended that if a command will start a command that will move a subsystem, that the parent command claims control. A child command will not take control away from its parent. It is recommended to take control during the `initialize` phase with something like `driveTrain.takeControl(this)`.
  - `MMCommand` provides a `shouldCancel()` method which checks if the Robot kill switch (the `A` button at the time of writing) or a command's parent has stopped running.
- - There is a default `isFinished()` implementation that checks if the command has timed out or if `shouldCancel()` returns true. It is recommended that if you are writing a command that controls a subsystem, you have isFinished return true of `super.isFinished` (or `shouldCancel`, depending on your needs) returns true or if you have lost control of any of the subsystems you need. E.g. `return driveTrain.controlledBy(this) || super.isFinished()`.
+ - There is a default `isFinished()` implementation that checks if the command has timed out or if `shouldCancel()` returns true. It is recommended that if you are writing a command that controls a subsystem, you have isFinished return true if `super.isFinished` (or `shouldCancel`, depending on your needs) returns true or if you have lost control of any of the subsystems you need. E.g. `return !Robot.driveTrain.controlledBy(this) || super.isFinished()`.
  - There are two timing functions available. `setTimeout()` is just WPILib's default implemantation. `timeout()` is a custom implementation that uses `setTimeout()`, but the timer will pause when the command is frozen (e.g. when the Scheduler is disabled).
  - Sometimes, you will want to start a command as your last child command, and then stop running after that command ends. This can be done by starting the command, then calling `releaseForChildren()`. When `releaseForChildren()` is called, a flag is set, which causes `shouldCancel()` to return true if there are no still-running child commands.
  - There is a new `resume()` method. This can be overridden, and is called whenever a command is frozen, then unfrozen. It should be assumed that all subsystems have had their `stop()` method called since the last time the command has had a chance to move them. Any subsystem instructions that were given during `initialize()` that would be cancelled by `stop()` (and not re-run by `execute()`) should be repeated by overriding this method.
  - There is a default `end()` implementation that will find any subsystems that this controls, and relinquish control, stopping the subsystem. It is recommended that if your command at any point takes control of another subsystem, that you either leave this method as-is or call `super.end()` when overriding it.
+
+> **Note:** Be careful when starting commands within commands. If you start a command within an `execute` block, make sure you don't accidentally create a condition where the parent command will flood the scheduler with tons of child commands. Make use of `releaseForChildren` and the `requireChildren` method and variable. `requireChildren` will start as `false` and be set to `true` after `releaseForChildren` is called. See the code for `Gear` for an example of this.
 
 ### `Series`
 
@@ -116,6 +122,12 @@ There is a `Series.Parallel` class which behaves similarly to the `Series`, but 
 
 The `DriveCommand` is a convenient way of moving the drive train in a particular manner. Currently there are two forms of the constructor. One form accepts two doubles and will driving straight (using the gyro to maintain heading) at a set speed for a set period of time. The other form accepts three doubles and will set each side of the drive train to an individually specified speed for a set period of time. The timing uses the custom `timeout()` method, meaning it will be paused when the command is frozen.
 
+Example line of code that drives forward at 50% power for 2 seconds, stops for 5 seconds, and drives back at 50% power for 2 seconds:
+
+```java
+(new Series(new DriveCommand(0.5, 2), new DriveCommand(0, 5), new DriveCommand(-0.5, 2))).start();
+```
+
 ## Drive train
 
 The `DriveTrain` is a subsystem that extends `MMSubsystem`, and adds some other features.
@@ -126,9 +138,27 @@ The drive train provides a `setAutopilot` function which **must** be called by a
 
 What sets this apart from normal control is the command doesn't actually do anything to move the motors. In fact, there doesn't even need to be an `execute` block for a command to take advantage of autopilot. All the command has to do is stay alive for however long it wants the autopilot to run, and stop running when it wants autopilot to stop. A simple use of this is to simply call `setAutopilot()` and then `timeout()` in the `initialize()` method, and let the autopilot do it's thing and let the default implementation of `isFinished()` provided by `MMCommand` to automatically stop when the timeout ends. The Scheduler will take care of constantly updating the autopilot feature to allow the drive train to do it's job.
 
+Example command that drives forward at 50% power for 1.5 seconds:
+
+```java
+class Drive extends MMCommand {
+	@Override
+	protected void initialize() {
+		Robot.driveTrain.setAutopilot(0.5); // 50% power
+		timeout(1.5); // 1.5 seconds
+	}
+
+	protected void isFinished() {
+		return super.isFinished() || !Robot.driveTrain.controlledBy(this);
+	}
+}
+```
+
 One form of `DriveCommand` uses autopilot to stay straight.
 
 > Autopilot will be frozen when the scheduler is disabled and will restart unhindered when the scheduler resumes, assuming the command is still running. It is not necessary to add a `resume()` method to handle autopilot.
+
+> The `setAutopilot` function will automatically grant control of the drive train to the command. Adding `driveTrain.takeControl(this)` is redundant.
 
 ### States
 
@@ -141,7 +171,7 @@ The drive train implements a state system with very complicated-looking code. It
 
 `DriveTrain` overrides `takeControl`, `relinquishControl` and other methods in order to maintain this state system. The drive train will call `Robot.notifyDriver()` (see below) any time the state changes **and** the change is _not_ simply between `COMMAND` and `AUTOPILOT`.
 
-> **NOTE:** This does not reflect the actual state of the robot. This is what the drive train _thinks its doing_.
+> **NOTE:** This does not reflect the actual state of the robot. This is what the drive train _thinks it's doing_.
 >
 > E.g. if the auto command ends before the end of the autonomous period, the drive train will switch to the `DISABLED` state, even though the robot is still enabled.
 >
@@ -183,6 +213,8 @@ There is a static `Robot.notifyDriver()` method which simply creates and starts 
 - [ ] Add public instance variables for your actuators and sensors (instantiate them directly in the subsystem class in the same way `DriveTrain` does)
 - [ ] Add public methods for controlling your subsystem (make sure you check `verifyResponse`)
 - [ ] Add a public `stop()` method which stops all actuators (don't check `verifyResponse`)
+- [ ] Add static variable to `Robot` containing subsystem
+- [ ] At the top of `Robot.robotInit()`, add the subsystem to the `subsystems` array
 - [ ] Test!
 
 ## Commands
@@ -198,8 +230,14 @@ There is a static `Robot.notifyDriver()` method which simply creates and starts 
 
 - [ ] Find out where to put the new controls in `teleopPeriodic()`. If there are already controls for that subsystem, then find the `if (subsystem.controlledByTeleop()) {` block for that subsystem. Otherwise, make one (make sure it's after the `if (!Scheduler.enabled) return true;` line).
 - [ ] Code the controls. Check the mappings to make sure it won't conflict with other controls and make any modifications necessary. The `joystick` variable is what you need for the joystick, and the subsystems are also stored as `Robot` variables. Anywhere where you call `getRawAxis(number)` or `getRawButton(number)`, put in a command that specifies what button or axis that number is referring to.
-- [ ] Update the mappings to reflect your changes.
+- [ ] Update the mappings to reflect your changes (in the giant comment in `Robot.java` and in the [Driving > Controls](#controls) section of this document).
 - [ ] Test!
+
+## SmartDashboard indicators
+
+ - [ ] Most indicators should be put in `robotPeriodic`.
+ - [ ] Make sure you update the [Driving > SmartDashboard > Indicators](#indicators) section of this document.
+ - [ ] Test!
 
 # Auto
 
@@ -208,6 +246,8 @@ The auto routine at the time of writing for the 2017 _STEAMWORKS_ challenge has 
  - `PLAY_DEAD` does nothing. It's just ignored.
  - `GEAR` runs the `Gear` command. It will drive at 50% power for half of a second before running the command if the robot starts on one of the side positions.
  - `SURGE` drives at 60% power for 2 seconds if the robot starts on one of the side positions. It will do nothing in the middle.
+
+> These auto routines drive the robot _backwards_, meaning they assume that the robot placed with the gear holder facing outward, away from the wall. This should _always_ be the starting configuration of the robot.
 
 `Auto` and `Gear` demonstrate good use of `Series`, `DriveCommand`, and `releaseForChildren()`. Look at them for examples of usage of these features.
 
@@ -218,3 +258,74 @@ If you have looked at some older code or code for previous years, you may have n
  - `Teleop` is no longer a command. All of the code that used to be in the `Teleop` command(s) is now in `Robot.teleopPeriodic()`
  - `RobotMap` is no longer used. It had no purpose. The motor controllers and sensors are now instantiated by the subsystems themselves.
  - `OI` is also no longer used. The joysticks are now completely handled within the `Robot` class. `Robot.joystick` is a lot nicer than `Robot.oi.getDriverJoystick()`, especially since now that the teleop controls are handled in `teleopPeriodic`, simply `joystick` is usually sufficient.
+
+# Driving
+
+Jeffrey `v3.0` uses one controller for driving and the SmartDashboard for feedback.
+
+## Controls
+
+Button | Description
+:---: | ---
+`Sticks`              | Drive using tank controls.
+`Left bumper`         | Toogle motor speed between 50% and 100%. Defaults to 100%.
+`A`                   | Kill all autonomous commands.
+`Y`                   | Attempt to autonomously put a gear on the peg. If it cannot see the peg, it will scan in a direction chosen based on the location of the driver console
+`D-Pad`               | Drive arcade-style. The interpretation of this may vary by controller, so test it beforehand on your controller. Tank drive will not take effect while `D-Pad` buttons are held down.
+`Right stick X-axis`  | More fine-tuned turning control for POV arcade drive.
+`Right trigger`       | Throttle for `D-Pad` arcade drive. Robot _will not_ move if `D-Pad` is used and this trigger is not pulled.
+`Right bumper`        | Climb up at full power.
+`B`                   | Climb up at half power. Use to hold position at the top of the rope at competition.
+`X`                   | Climb down at half power. Use at demonstrations.
+`Right trigger`       | Climb up. The distance at which you pull the trigger controls how fast the climber works. _Will not_ work if `D-Pad` is held down, as this becomes the throttle.
+`Left trigger`        | Climb down. Use at demonstrations. Same speed rules as above.
+`..................`  |
+
+## SmartDashboard
+
+There are several indicators and choosers on the SmartDashboard. There are also two cameras available, each facing opposite directions.
+
+> **Note:** It is **important** to make sure that before every match, the choosers reflect the conditions of the match. This is the driver's responsibility.
+
+### Auto chooser
+
+The auto chooser is used to pick the autonomous mode to be used in a match.
+
+Mode | Description
+:---: | ---
+`Gear`       | Attempts to place a gear on the peg. _Make sure the position selector is correct._
+`Play dead`  | Does nothing.
+`Mobility`   | If, according to the position selector, the robot is _not_ in the middle, drives forward for 2 seconds to cross the line and get 5 auto points. Use this if `Gear` is not an option and this is.
+`.........`  |
+
+### Position selector
+
+The position selector simply specifies where the robot starts the match. Just choose `Left`, `Center`, or `Right` accordingly.
+
+### Indicators
+
+There are several indicators that report statuses to the SmartDashboard. It is important to know what these mean.
+
+Indicator | Description
+:---: | ---
+`Competition mode`  | This is whether or not the robot thinks it's at a competition (or the DS is in practice mode). This primarily allows autonomous commands to keep running into the teleop period.
+`Enabled`           | This is whether or not the robot is enabled. At the moment this reflects what is shown by the RSL light.
+`Pi`                | This is whether or not the Raspberry Pi is up and running, regardless of whether or not it can see the peg.
+`Sight`             | This is whether or not the Raspberry Pi thinks it can see the peg.
+`Power`             | This is how much power is being given to the tank drive controls. Green = 100%, red = 50%.
+`................`  |
+
+There are also four additional indicators that display the state of the drive train. Which ever indicator is green is the state of the drive train, while the others will be red.
+
+State | Description
+:---: | ---
+`Disabled`   | The drive train isn't currently doing anything.
+`Teleop`     | The drive train is at the mercy of the driver's controller.
+`Command`    | The drive train is being controlled by an autonomous command, regardless of whether it was started during teleop or started along with the autonomous period.
+`Autopilot`  | Similar to `Command` but with some different technical stuff that isn't important if you aren't a programmer.
+
+> **NOTE:** As stated in the [Drive train > States](#states) section above, this does not reflect the actual state of the robot. This is what the drive train _thinks it's doing_.
+>
+> E.g. if the auto command ends before the end of the autonomous period, the drive train will switch to the `Disabled` state, even though the robot is still enabled.
+>
+> If there is an autonomous command running and the robot is disabled (and the command is frozen, not cancelled), the drive train will stay in the `Command` or `Autopilot` state. This doesn't mean it's moving (or trying to move), it just means it's still under the control of a command.

@@ -52,9 +52,26 @@ public abstract class MMCommand extends Command {
 	 */
 	@Override
 	public void start() {
+		Scheduler.add(this);
+	}
+
+	/**
+	 * Called by scheduler whenever the command is started. Should only be called by the scheduler.
+	 */
+	public final void _start() {
 		requireChildren = false;
 		children.clear();
-		Scheduler.add(this);
+		timeLeft = -1;
+		if (Scheduler.getCurrentCommand() instanceof MMCommand) {
+			parent = (MMCommand) Scheduler.getCurrentCommand();
+			if (parent != null)
+				parent.children.add(this);
+		} else if (Scheduler.getCurrentCommand() != null)
+			throw new Scheduler.IllegalPassiveCommandException("Passive command cannot start an active command!\n" +
+																   "Modify the command class to extend MMCommand!");
+		else
+			parent = null;
+		hasRun = false;
 	}
 
 	/**
@@ -82,8 +99,8 @@ public abstract class MMCommand extends Command {
 	}
 
 	/**
-	 * @return If the kill switch has been activited, or the parent has been stopped. Use this if you want to override
-	 * {@link MMCommand#isFinished()} to follow these rules without cancelling on timeLeft.
+	 * @return If the kill switch has been activated, or the parent has been stopped. Use this if you want to override
+	 * {@link MMCommand#isFinished()} to follow these rules without cancelling on timeout.
 	 */
 	protected boolean shouldCancel() {
 		if (requireChildren) {
@@ -112,7 +129,7 @@ public abstract class MMCommand extends Command {
 	public void resume() {}
 
 	/**
-	 * Sets a timeout in such a way that it will be paused when the command is frozen (e.g. by a disabled). This should
+	 * Sets a timeout in such a way that it will be paused when the command is frozen (e.g. by a disable). This should
 	 * be used instead of {@link Command#setTimeout(double) setTimeout()} most of the time.
 	 *
 	 * @param time Time to expire the command, in seconds.

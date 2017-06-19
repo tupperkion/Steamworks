@@ -53,14 +53,15 @@ public class Gear extends MMCommand {
 		if (!found) found = Vision.izgud();
 		if (scan && !found) {
 			if (Robot.pos.getSelected() == 3)
-				Robot.driveTrain.drive(-0.4, 0);
+				// probably on right side of peg, scan left
+				Robot.driveTrain.driveBackwards(0, 0.4);
 			if (Robot.pos.getSelected() == 1 || DriverStation.getInstance().getLocation() == 1 ||
 				(DriverStation.getInstance().getLocation() == 2 && DriverStation.getInstance().getAlliance() == DriverStation.Alliance.Red)) {
-				// scan right
-				Robot.driveTrain.drive(0, -0.4);
+				// probably on left side of peg, scan right
+				Robot.driveTrain.driveBackwards(0.4, 0);
 			} else {
-				// scan left
-				Robot.driveTrain.drive(-0.4, 0);
+				// probably on right side of peg, scan left
+				Robot.driveTrain.driveBackwards(0, 0.4);
 			}
 		}
 		if (found && !requireChildren) {
@@ -70,15 +71,20 @@ public class Gear extends MMCommand {
 				double error = Vision.getTurningAngle();
 				SmartDashboard.putNumber("Debug", error);
 				if (error < -30) {
-					Robot.driveTrain.drive(-0.3, 0);
+					// > 30 degrees to the right, turn left
+					Robot.driveTrain.driveBackwards(0, 0.3);
 				} else if (error < -5) {
-					Robot.driveTrain.drive(-0.3, -0.2);
+					// 5-30 degrees to the right, turn left
+					Robot.driveTrain.driveBackwards(0.2, 0.3);
 				} else if (error < 5) {
+					// + or - 5 degrees, tolerable, go straight
 					Robot.driveTrain.drive(-0.3);
 				} else if (error < 30) {
-					Robot.driveTrain.drive(-0.2, -0.3);
+					// 5-30 degrees to the left, turn right
+					Robot.driveTrain.driveBackwards(0.3, 0.2);
 				} else {
-					Robot.driveTrain.drive(0, -0.3);
+					// > 30 degrees to the left, turn right
+					Robot.driveTrain.driveBackwards(0.3, 0);
 				}
 				//} else {
 				//	if (!timing) {
@@ -88,13 +94,9 @@ public class Gear extends MMCommand {
 				//	Robot.driveTrain.driveArcade(0.4, 0);
 				//}
 			} else {
-				/*if (!timing) {
-					setTimeout(0.5);
-					timing = true;
-				}
-				Robot.driveTrain.drive(0.4);*/
-				// relinquishing control will cause this to stop running the loop, but the command will stay "running"
-				// in order to prevent the child commands from being cancelled
+				// Note the !requireChildren condition above. This is important so that once this Series is started,
+				// A) the loop above which tries to maintain heading on the peg stops and B) only one Series is spawned
+				// When coding, be careful not to allow commands to keep spawning endlessly
 				(new Series(new DriveCommand(-0.2, 0.5), new DriveCommand(0.2, 0.25))).start();
 				releaseForChildren();
 			}

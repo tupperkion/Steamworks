@@ -76,6 +76,7 @@ public class DriveTrain extends MMSubsystem {
 
 	/**
 	 * Checks if this command, or any of its descendants, is the one that initiated autopilot.
+	 *
 	 * @param command Command to check
 	 * @return True if the DriveTrain is in autopilot mode, and this command or an ancestor is the one that set the mode.
 	 */
@@ -176,6 +177,18 @@ public class DriveTrain extends MMSubsystem {
 		driveRight(right);
 	}
 
+	/**
+	 * Drives the robot, but changes "forwards" to be in the opposite direction. Used to make auto code more
+	 * comprehensible. The same as {@link DriveTrain#drive(double, double)}, but swaps and inverts the left and right
+	 * speeds.
+	 *
+	 * @param left Left speed
+	 * @param right Right speed
+	 */
+	public void driveBackwards(double left, double right) {
+		drive(-right, -left);
+	}
+
 	public void drive(double speed) {
 		drive(speed, speed);
 	}
@@ -196,7 +209,8 @@ public class DriveTrain extends MMSubsystem {
 
 	@Override
 	public void stop() {
-		drive(0, 0);
+		left.set(0);
+		right.set(0);
 	}
 
 	public double getGyro() {

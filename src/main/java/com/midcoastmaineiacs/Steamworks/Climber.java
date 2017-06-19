@@ -13,6 +13,6 @@ public class Climber extends MMSubsystem {
 
 	@Override
 	public void stop() {
-		set(0);
+		climber.set(0);
 	}
 }

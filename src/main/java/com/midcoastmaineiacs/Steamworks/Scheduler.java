@@ -82,18 +82,13 @@ public class Scheduler extends TimerTask {
 	 * @see MMCommand#start()
 	 */
 	public static void add(Command command) {
-		System.out.println("Starting command: " + command);
-		if (command instanceof MMCommand) {
-			if (getCurrentCommand() instanceof MMCommand) {
-				((MMCommand) command).parent = (MMCommand) getCurrentCommand();
-				((MMCommand) getCurrentCommand()).children.add((MMCommand) command);
-			} else if (getCurrentCommand() != null)
-				throw new Scheduler.IllegalPassiveCommandException("Passive command cannot start an active command!\n" +
-																	   "Modify the command class to extend MMCommand!");
-			else
-				((MMCommand) command).parent = null;
-			((MMCommand) command).hasRun = false;
+		if (command.isRunning()) {
+			System.out.println("Command " + command + " not started. It is already running.");
+			return;
 		}
+		System.out.println("Starting command: " + command);
+		if (command instanceof MMCommand)
+			((MMCommand) command)._start();
 		MMAccessProxy.startRunningCommand(command);
 		schedule.add(command);
 	}

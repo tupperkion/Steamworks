@@ -12,13 +12,6 @@ public abstract class MMSubsystem extends Subsystem {
 	private MMCommand controllingCommand = null;
 
 	/**
-	 * If true, should only respond to updates if either A) Scheduler.currentCommand == controllingCommand or B)
-	 * controllingCommand == null. It is the responsibility of the subclass to [or not to] enforce this rule. Using
-	 * willRespond() is generally the easiest way to enforce this.
-	 */
-	boolean enforceControl = true;
-
-	/**
 	 * Returns whether or not the Subsystem is controlled by a command or one of its parents.
 	 *
 	 * @param command The command to be checked (or null to check if no command controls it)
@@ -29,8 +22,9 @@ public abstract class MMSubsystem extends Subsystem {
 	}
 
 	/**
-	 * Returns whether or not the Subsystem is directing controlled by a command. (Controlled by it, and not one of its
-	 * parents)
+	 * Returns whether or not the Subsystem is directing controlled by a command (controlled by it, and not one of its
+	 * parents). In most cases, you should use {@link MMSubsystem#controlledBy(MMCommand)} instead, in order to obey
+	 * command hierarchy.
 	 *
 	 * @param command The command to be checked (or null to check if no command controls it)
 	 * @return Whether or not the Subsystem is controlled by the command, or no command if "command" is null
@@ -40,31 +34,18 @@ public abstract class MMSubsystem extends Subsystem {
 	}
 
 	/**
-	 * Grant control of the Subsystem to a command and all of its children (any command started by it),
-	 * guaranteeing that it won't be controlled by teleop.
-	 *
-	 * @param command The command, or null to relinquish control to all commands
-	 * @param enforce If true, subsystem updates should be ignored unless they are called by the controlling command
-	 *                (or there is no controlling command). Should have no effect when command is null.
-	 */
-	public void takeControl(MMCommand command, boolean enforce) {
-		System.out.println(this + ": Taking control: " + command);
-		if (command == null || !command.controls(this))
-			controllingCommand = command;
-		else
-			System.out.println("-- nope, it already controls me!");
-		enforceControl = enforce;
-	}
-
-	/**
-	 * Grant control of the Subsystem to a command, guaranteeing that it won't be controlled by teleop. Always enforces
-	 * control, so updates should be ignored unless they are called by the controlling command (or there is no
-	 * controlling command).
+	 * Grant control of the Subsystem to a command, guaranteeing that it won't be controlled by teleop or another,
+	 * unrelated command.
 	 *
 	 * @param command The command, or null to relinguish control to all commands
 	 */
 	public void takeControl(MMCommand command) {
-		takeControl(command, true);
+		System.out.println(this + ": Taking control: " + command);
+		if (command == null || !command.controls(this)) {
+			controllingCommand = command;
+			stop();
+		} else
+			System.out.println("-- nope, it already controls me!");
 	}
 
 	/**
@@ -100,24 +81,21 @@ public abstract class MMSubsystem extends Subsystem {
 	 *     the subsystem currently isn't controlled by a command
 	 * </li><li>
 	 *     the method was called by the command that controlled the subsystem
-	 * </li><li>
-	 *     the subsystem was told not to enforce the command control rules when takeControl() was called
 	 * </li></ul>
 	 *
 	 * @return true if the subsystem should respond to the method that called this method
 	 */
 	public boolean willRespond() {
-		return Scheduler.enabled && (controlledBy(null) || !enforceControl || Scheduler.getCurrentCommand() instanceof MMCommand && controlledBy((MMCommand) Scheduler.getCurrentCommand()));
+		return Scheduler.enabled && (controlledBy(null) || Scheduler.getCurrentCommand() instanceof MMCommand && controlledBy((MMCommand) Scheduler.getCurrentCommand()));
 	}
 
 	/**
 	 * Returns {@link MMSubsystem#willRespond()}, but ensures that the subsystem isn't being controlled by a passive command.
 	 * @return the result of {@link MMSubsystem#willRespond()}
-	 * @throws Scheduler.IllegalPassiveCommandException if the passive command is being run
+	 * @throws Scheduler.IllegalPassiveCommandException if called by a passive command
 	 */
 	public boolean verifyResponse() {
 		if (willRespond()) {
-			StackTraceElement[] stack = Thread.currentThread().getStackTrace();
 			if (Scheduler.getCurrentCommand() != null && !(Scheduler.getCurrentCommand() instanceof MMCommand))
 				throw new Scheduler.IllegalPassiveCommandException("Passive command cannot control a subsystem!");
 			return true;
@@ -128,7 +106,7 @@ public abstract class MMSubsystem extends Subsystem {
 	public void enableTeleop(boolean enabled) {}
 
 	/**
-	 * Stop all motors.
+	 * Stop all actuators. Does not check {@link MMSubsystem#verifyResponse()}.
 	 */
 	public abstract void stop();
 

@@ -146,11 +146,13 @@ public abstract class MMCommand extends Command {
 	 */
 	public void updateTimeout() {
 		if (timeLeft != -1) {
-			if (!enabled) {
+			if (!Scheduler.enabled) {
 				timeLeft = timeLeft - timeSinceInitialized();
-				setTimeout(-1);
-			} else
+				setTimeout(Double.MAX_VALUE);
+			} else {
 				setTimeout(timeLeft + timeSinceInitialized());
+				timeLeft = timeLeft + timeSinceInitialized();
+			}
 		}
 	}
 }

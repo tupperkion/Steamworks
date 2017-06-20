@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Timer;
 
 @SuppressWarnings("WeakerAccess")
-public class Robot extends IterativeRobot { // TODO: Test changes resulting from mainThread introduction
+public class Robot extends IterativeRobot {
 	/** How long is the end game period (in seconds)? Currently used to notify the driver */
 	public static final int ENDGAME = 30;
 
@@ -200,7 +200,7 @@ public class Robot extends IterativeRobot { // TODO: Test changes resulting from
 		if (!FORCE_COMPETITION) {
 			//                              detect whether or not we're at a competition
 			boolean willEnableCompetition = DriverStation.getInstance().isFMSAttached() || PRACTICE_IS_COMPETITION &&
-																							   // detect practice mode TODO: test practice mode
+																							   // detect practice mode
 																							   DriverStation.getInstance().getMatchTime() > 0.0;
 			if (!competition && willEnableCompetition)
 				DriverStation.reportWarning("Competition mode activated", false);
@@ -300,8 +300,7 @@ public class Robot extends IterativeRobot { // TODO: Test changes resulting from
 	}
 
 	@Override
-	public void teleopPeriodic() { // TODO: test kill switch
-		// TODO: test endgame notification and reset on disable
+	public void teleopPeriodic() {
 		// Endgame notification
 		if (!endgamePassed && DriverStation.getInstance().getMatchTime() > 0 && DriverStation.getInstance().getMatchTime() <= ENDGAME) {
 			SmartDashboard.putBoolean("Endgame", true);
@@ -314,9 +313,9 @@ public class Robot extends IterativeRobot { // TODO: Test changes resulting from
 		if (driveTrain.controlledByTeleop()) {
 			waitingForTeleop = false;
 			if (joystick.getPOV() != -1) { // TODO: test POV driving
-				double forward = -Math.cos(Math.toRadians(joystick.getPOV()));
+				double forward = Math.cos(Math.toRadians(joystick.getPOV()));
 				double turn = -Math.sin(Math.toRadians(joystick.getPOV())) + joystick.getRawAxis(4); // 4 = right X
-				driveTrain.driveArcade(forward * -joystick.getRawAxis(2), turn * -joystick.getRawAxis(2));
+				driveTrain.driveArcade(forward * joystick.getRawAxis(2), turn * joystick.getRawAxis(2));
 			} else {
 				// left axis = 1, right axis = 5
 				double leftSpeed = -joystick.getRawAxis(1);
@@ -328,8 +327,9 @@ public class Robot extends IterativeRobot { // TODO: Test changes resulting from
 			}
 			if (joystick.getRawButton(4)) {
 				//autochooser.getSelected().start();
-				MMCommand command = new Gear(true);
+				MMCommand command = new Gear(Gear.ScanMode.STATION);
 				driveTrain.takeControl(command);
+				command.start();
 			}
 		} else
 
@@ -338,7 +338,7 @@ public class Robot extends IterativeRobot { // TODO: Test changes resulting from
 			// this means that the auto period has just ended, teleop has just started, but the auto routine is still
 			// running, waiting for the driver to manually take control, or the driver is holding down A, so autonomous
 			// commands started during teleop need to be killed.
-			if (Math.abs(joystick.getRawAxis(1)) >= 0.9 && Math.abs(joystick.getRawAxis(5)) >= 0.9 /*|| killSwitch()*/) { // TODO: test take-ver
+			if (Math.abs(joystick.getRawAxis(1)) >= 0.9 && Math.abs(joystick.getRawAxis(5)) >= 0.9 /*|| killSwitch()*/) {
 				Scheduler.cancelAllCommands();
 				waitingForTeleop = false;
 			}

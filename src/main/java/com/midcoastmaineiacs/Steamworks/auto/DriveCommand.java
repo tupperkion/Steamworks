@@ -57,6 +57,7 @@ public class DriveCommand extends MMCommand {
 
 	@Override
 	public void resume() {
+		System.out.println("Resuming: " + this);
 		if (autopilot) {
 			Robot.driveTrain.drive(speed); // TODO: remove
 		} else {

@@ -39,7 +39,7 @@ public class Scheduler extends TimerTask {
 
 			if (command instanceof MMCommand && !command.willRunWhenDisabled()) {
 				MMCommand c = (MMCommand) command;
-				if (c.enabled != enabled) c.updateTimeout(); // TODO: test timeouts
+				if (c.enabled != enabled) c.updateTimeout();
 				if (!c.enabled && enabled) c.resume();
 				c.enabled = enabled;
 			}
@@ -125,7 +125,6 @@ public class Scheduler extends TimerTask {
 	 * @return The command that called this method, or null if no command led to this method being called
 	 */
 	public static Command getCurrentCommand() {
-		System.out.println(Thread.currentThread() + " " + Robot.mainThread);
 		return Thread.currentThread() == Robot.mainThread ? null : currentCommand;
 	}
 

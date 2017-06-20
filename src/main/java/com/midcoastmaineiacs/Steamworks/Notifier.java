@@ -44,8 +44,9 @@ public class Notifier extends Command {
 
 	@Override
 	public void end() {
-		Robot.joystick.setRumble(GenericHID.RumbleType.kLeftRumble, 0);
-		Robot.joystick.setRumble(GenericHID.RumbleType.kRightRumble, 0);
+		System.out.println("Rumble: " + Robot.driveTrain.lastLeftRumble);
+		Robot.joystick.setRumble(GenericHID.RumbleType.kLeftRumble, Robot.driveTrain.lastLeftRumble);
+		Robot.joystick.setRumble(GenericHID.RumbleType.kRightRumble, Robot.driveTrain.lastRightRumble);
 	}
 
 	@SuppressWarnings("BooleanMethodIsAlwaysInverted")

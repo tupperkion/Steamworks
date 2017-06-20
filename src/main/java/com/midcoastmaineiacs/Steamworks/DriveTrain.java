@@ -20,6 +20,9 @@ public class DriveTrain extends MMSubsystem {
 	private State state = State.DISABLED;
 	private MMCommand autopilotCommand;
 
+	public double lastLeftRumble = 0d;
+	public double lastRightRumble = 0d;
+
 	/**
 	 * Gives control to the currently running command and drives the robot, ensuring that the current heading is
 	 * maintained. Must be called while a command is running (e.g. in {@link Command#initialize() initialize()}).
@@ -106,6 +109,7 @@ public class DriveTrain extends MMSubsystem {
 		if (verifyResponse()) {
 			lastLeftSpeed = speed;
 			left.set(speed);
+			lastLeftRumble = Math.abs(speed) >= 0.15 ? Math.abs(speed) : 0d;
 			if (!Notifier.isNotifying() && Math.abs(speed) >= 0.15)
 				Robot.joystick.setRumble(RumbleType.kLeftRumble, Math.abs(speed));
 			else if (!Notifier.isNotifying())
@@ -117,6 +121,7 @@ public class DriveTrain extends MMSubsystem {
 		if (verifyResponse()) {
 			lastRightSpeed = speed;
 			right.set(-speed);
+			lastRightRumble = Math.abs(speed) >= 0.15 ? Math.abs(speed) : 0d;
 			if (!Notifier.isNotifying() && Math.abs(speed) >= 0.15)
 				Robot.joystick.setRumble(RumbleType.kRightRumble, Math.abs(speed));
 			else if (!Notifier.isNotifying())
@@ -211,6 +216,11 @@ public class DriveTrain extends MMSubsystem {
 	public void stop() {
 		left.set(0);
 		right.set(0);
+		if (!Notifier.isNotifying()) {
+			Robot.joystick.setRumble(RumbleType.kRightRumble, 0);
+			Robot.joystick.setRumble(RumbleType.kLeftRumble, 0);
+		}
+		lastLeftRumble = lastRightRumble = 0d;
 	}
 
 	public double getGyro() {

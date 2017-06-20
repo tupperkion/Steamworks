@@ -25,11 +25,11 @@ public class Auto extends MMCommand {
 				switch (Robot.starting) {
 					case (1):
 					case (3):
-						(new Series((new DriveCommand(-0.5, 0.5)), (new Gear(true)))).start();
+						(new Series((new DriveCommand(-0.5, 0.5)), (new Gear(Gear.ScanMode.STARTING)))).start();
 						break;
 					case (2):
 					default:
-						(new Gear(true)).start();
+						(new Gear(Gear.ScanMode.STARTING)).start();
 						break;
 				}
 				break;
@@ -37,7 +37,7 @@ public class Auto extends MMCommand {
 				if (Robot.starting == 2)
 					DriverStation.reportError("Surge cancelled due to illegal starting position!", false);
 				else
-					(new DriveCommand(-0.6, 2)).start();
+					(new DriveCommand(-0.2, 10)).start();//(new DriveCommand(-0.6, 2)).start();
 				break;
 			default:
 				break;

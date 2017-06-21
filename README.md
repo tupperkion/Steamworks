@@ -271,14 +271,15 @@ Button | Description
 `Left bumper`         | Toogle motor speed between 50% and 100%. Defaults to 100%.
 `A`                   | Kill all autonomous commands.
 `Y`                   | Attempt to autonomously put a gear on the peg. If it cannot see the peg, it will scan in a direction chosen based on the location of the driver console
-`D-Pad`               | Drive arcade-style. The interpretation of this may vary by controller, so test it beforehand on your controller. Tank drive will not take effect while `D-Pad` buttons are held down.
+`D-Pad`               | Drive arcade-style. Tank drive will not take effect while `D-Pad` buttons are held down.
 `Right stick X-axis`  | More fine-tuned turning control for POV arcade drive.
-`Right trigger`       | Throttle for `D-Pad` arcade drive. Robot _will not_ move if `D-Pad` is used and this trigger is not pulled.
+`Right trigger`       | Throttle for `D-Pad` arcade drive, _full_ speed. Robot _will not_ move if `D-Pad` is used and this (or the left) trigger is not pulled.
+`Left trigger`        | Throttle for `D-Pad` arcade drive, _half_ speed. Robot _will not_ move if `D-Pad` is used and this (or the right) trigger is not pulled.
 `Right bumper`        | Climb up at full power.
 `B`                   | Climb up at half power. Use to hold position at the top of the rope at competition.
 `X`                   | Climb down at half power. Use at demonstrations.
 `Right trigger`       | Climb up. The distance at which you pull the trigger controls how fast the climber works. _Will not_ work if `D-Pad` is held down, as this becomes the throttle.
-`Left trigger`        | Climb down. Use at demonstrations. Same speed rules as above.
+`Left trigger`        | Climb down. Use at demonstrations. Same rules as above.
 `..................`  |
 
 ## SmartDashboard

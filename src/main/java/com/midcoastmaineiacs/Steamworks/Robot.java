@@ -234,6 +234,7 @@ public class Robot extends IterativeRobot {
 	 * POV            Drive arcade (temporarily disables tank drive and trigger-based climber controls)
 	 * Right stick X  Additional turning control while using POV arcade drive
 	 * Right trigger  Throttle for POV arcade drive
+	 * Left trigger   Throttle for POV arcade drive, half speed
 	 *
 	 * RB             Climb (100%)
 	 * B              Climb (50%, use when at top of touch pad to hold position, just tap the button repeatedly)
@@ -315,7 +316,8 @@ public class Robot extends IterativeRobot {
 			if (joystick.getPOV() != -1) { // TODO: test POV driving
 				double forward = Math.cos(Math.toRadians(joystick.getPOV()));
 				double turn = -Math.sin(Math.toRadians(joystick.getPOV())) + joystick.getRawAxis(4); // 4 = right X
-				driveTrain.driveArcade(forward * joystick.getRawAxis(2), turn * joystick.getRawAxis(2));
+				double throttle = joystick.getRawAxis(2) / 2 + joystick.getRawAxis(3);
+				driveTrain.driveArcade(forward * throttle, turn * throttle);
 			} else {
 				// left axis = 1, right axis = 5
 				double leftSpeed = -joystick.getRawAxis(1);
@@ -353,7 +355,7 @@ public class Robot extends IterativeRobot {
 			else if (joystick.getRawButton(3)) // X
 				climber.set(-0.5);
 			else if (joystick.getPOV() == -1)
-				climber.set(joystick.getRawAxis(2) - joystick.getRawAxis(3));
+				climber.set(joystick.getRawAxis(3) - joystick.getRawAxis(2));
 		}
 	}
 

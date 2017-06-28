@@ -37,7 +37,7 @@ public class Auto extends MMCommand {
 				if (Robot.starting == 2)
 					DriverStation.reportError("Surge cancelled due to illegal starting position!", false);
 				else
-					(new DriveCommand(-0.2, 10)).start();//(new DriveCommand(-0.6, 2)).start();
+					(new DriveCommand(-0.6, 2)).start();
 				break;
 			default:
 				break;

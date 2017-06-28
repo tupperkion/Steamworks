@@ -73,7 +73,7 @@ Commands are probably the most complicated part of this project (except maybe Dr
 
 The primary difference between active and passive commands is that passive commands are _not_ allowed to...
 
- - move (or cause to move) any subsystem motors (enforced by `verifyResponse`)
+ - move (or cause to move) any subsystem motors (enforced by `verifyResponse()`)
  - take control of a subsystem (the `takeControl()` method only accepts `MMCommand` as an argument)
  - start _any active_ command (they can still start other passive commands, enforced by `Scheduler.add()`)
 
@@ -120,7 +120,7 @@ There is a `Series.Parallel` class which behaves similarly to the `Series`, but 
 
 ### `DriveCommand`
 
-The `DriveCommand` is a convenient way of moving the drive train in a particular manner. Currently there are two forms of the constructor. One form accepts two doubles and will driving straight (using the gyro to maintain heading) at a set speed for a set period of time. The other form accepts three doubles and will set each side of the drive train to an individually specified speed for a set period of time. The timing uses the custom `timeout()` method, meaning it will be paused when the command is frozen.
+The `DriveCommand` is a convenient way of moving the drive train in a particular manner. Currently there are two forms of the constructor. One form accepts two doubles and will drive straight (using the gyro to maintain heading) at a set speed for a set period of time. The other form accepts three doubles and will set each side of the drive train to an individually specified speed for a set period of time. The timing uses the custom `timeout()` method, meaning it will be paused when the command is frozen.
 
 Example line of code that drives forward at 50% power for 2 seconds, stops for 5 seconds, and drives back at 50% power for 2 seconds:
 
@@ -148,6 +148,7 @@ class Drive extends MMCommand {
 		timeout(1.5); // 1.5 seconds
 	}
 
+	@Override
 	protected void isFinished() {
 		return super.isFinished() || !Robot.driveTrain.controlledBy(this);
 	}
@@ -211,8 +212,8 @@ There is a static `Robot.notifyDriver()` method which simply creates and starts 
 ## Subsystems
 
 - [ ] Add public instance variables for your actuators and sensors (instantiate them directly in the subsystem class in the same way `DriveTrain` does)
-- [ ] Add public methods for controlling your subsystem (make sure you check `verifyResponse`)
-- [ ] Add a public `stop()` method which stops all actuators (don't check `verifyResponse`)
+- [ ] Add public methods for controlling your subsystem (make sure you check `verifyResponse()`)
+- [ ] Add a public `stop()` method which stops all actuators (don't check `verifyResponse()`)
 - [ ] Add static variable to `Robot` containing subsystem
 - [ ] At the top of `Robot.robotInit()`, add the subsystem to the `subsystems` array
 - [ ] Test!
@@ -235,7 +236,7 @@ There is a static `Robot.notifyDriver()` method which simply creates and starts 
 
 ## SmartDashboard indicators
 
- - [ ] Most indicators should be put in `robotPeriodic`.
+ - [ ] Most indicators should be put in `robotPeriodic()`.
  - [ ] Make sure you update the [Driving > SmartDashboard > Indicators](#indicators) section of this document.
  - [ ] Test!
 

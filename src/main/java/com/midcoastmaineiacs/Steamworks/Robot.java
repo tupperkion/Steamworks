@@ -124,6 +124,16 @@ public class Robot extends IterativeRobot {
 	 */
 	@Override
 	public void robotPeriodic() {
+		if (joystick.getRawButton(7)) {
+			Scheduler.enabled = false;
+			if (Scheduler.teleop)
+				Scheduler.enableTeleop(false);
+		} else if (joystick.getRawButton(8) && !isDisabled()) {
+			Scheduler.enabled = true;
+			if (isOperatorControl())
+				Scheduler.enableTeleop(true);
+		}
+
 		SmartDashboard.putBoolean("Competition mode", competition);
 		SmartDashboard.putBoolean("Enabled", Scheduler.enabled);
 
@@ -240,6 +250,9 @@ public class Robot extends IterativeRobot {
 	 * B              Climb (50%, use when at top of touch pad to hold position, just tap the button repeatedly)
 	 * Left trigger   Climb down
 	 * Right trigger  Climb up
+	 *
+	 * Back           Disable robot
+	 * Start          Enable robot (if driver station allows)
 	 *
 	 * The following will always be mapped, but aren't likely to be used during comp
 	 *

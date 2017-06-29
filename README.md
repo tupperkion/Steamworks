@@ -281,6 +281,8 @@ Button | Description
 `X`                   | Climb down at half power. Use at demonstrations.
 `Right trigger`       | Climb up. The distance at which you pull the trigger controls how fast the climber works. _Will not_ work if `D-Pad` is held down, as this becomes the throttle.
 `Left trigger`        | Climb down. Use at demonstrations. Same rules as above.
+`Back`                | **Disable** the robot.
+`Start`               | **Enable** the robot (if the driver station allows).
 `..................`  |
 
 ## SmartDashboard

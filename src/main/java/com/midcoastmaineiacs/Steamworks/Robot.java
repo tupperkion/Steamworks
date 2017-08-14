@@ -134,6 +134,13 @@ public class Robot extends IterativeRobot {
 				Scheduler.enableTeleop(true);
 		}
 
+		if (!rbWasPressed && joystick.getRawButton(5)) {
+			rbWasPressed = true;
+			Vision.requestCapture();
+			notifyDriver();
+		} else if (rbWasPressed && !joystick.getRawButton(5))
+			rbWasPressed = false;
+
 		SmartDashboard.putBoolean("Competition mode", competition);
 		SmartDashboard.putBoolean("Enabled", Scheduler.enabled);
 
@@ -265,6 +272,7 @@ public class Robot extends IterativeRobot {
 	 */
 
 	private static boolean lbWasPressed = false;
+	private static boolean rbWasPressed = false;
 	/** "true" = 100% power (competition mode), "false" = 50% power (demonstration/small space mode) */
 	private static boolean fullPower = true;
 	/** "true" adds a 15% dead zone in the middle of the controller to ensure joysticks rest in non-motor-moving position */
@@ -374,7 +382,6 @@ public class Robot extends IterativeRobot {
 
 	@Override
 	public void disabledPeriodic() {
-		// speed toggle TODO: test during teleop and disabled
 		if (!lbWasPressed && joystick.getRawButton(5)) { // LB
 			lbWasPressed = true;
 			fullPower = !fullPower;

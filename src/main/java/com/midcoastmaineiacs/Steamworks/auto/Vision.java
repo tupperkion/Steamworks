@@ -73,6 +73,11 @@ public class Vision {
 	public static double getTurningAngle() {
 		return getTurningAngle(getDistance());
 	}
+
+	public static void requestCapture() {
+		if (table != null)
+			table.putBoolean("capture", true);
+	}
 }
 /*
  *   C

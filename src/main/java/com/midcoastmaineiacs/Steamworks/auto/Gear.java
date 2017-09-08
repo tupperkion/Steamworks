@@ -17,7 +17,7 @@ public class Gear extends MMCommand {
 	 *     takes control of the {@link DriveTrain DriveTrain}
 	 * </li><li>
 	 *     scans by gradually pivoting left or right (see {@link Gear#scan}) until the peg is spotted by the camera
-	 *     ({@link Vision#izgud()} returns {@code true})
+	 *     ({@link VisionServer#izgud()} returns {@code true})
 	 * </li><li>
 	 *     moves the robot to the peg, turning as necessary to maintain alignment
 	 * </li><li>
@@ -30,13 +30,13 @@ public class Gear extends MMCommand {
 	 * @param scan Whether or not to scan
 	 */
 	public Gear(ScanMode scan) {
-		if (scan != ScanMode.NONE && !Vision.isalive()) scan = ScanMode.NONE;
+		if (scan != ScanMode.NONE && !Robot.vision.isAlive()) scan = ScanMode.NONE;
 		this.scan = scan;
 	}
 
 	public void initialize() {
 		Robot.driveTrain.takeControl(this);
-		found = Vision.izgud();
+		found = Robot.vision.izgud();
 	}
 
 	/**
@@ -54,7 +54,7 @@ public class Gear extends MMCommand {
 	}
 
 	public void execute() {
-		if (!found) found = Vision.izgud();
+		if (!found) found = Robot.vision.izgud();
 		if (scan != ScanMode.NONE && !found) {
 			if (getScanDirection())
 				// probably on left side of peg, scan right
@@ -64,10 +64,10 @@ public class Gear extends MMCommand {
 				Robot.driveTrain.driveBackwards(-0.3, 0.3);
 		}
 		if (found && !requireChildren) {
-			if (Vision.izgud()) {
+			if (Robot.vision.izgud()) {
 				//double distance = Vision.getDistance();
 				//if (distance > 12) {
-				double error = Vision.getTurningAngle();
+				double error = Robot.vision.getTurningAngle();
 				if (error < -30) {
 					// > 30 degrees to the right, turn left
 					Robot.driveTrain.driveBackwards(-0.3, 0.3);
@@ -102,7 +102,7 @@ public class Gear extends MMCommand {
 	}
 
 	public boolean isFinished() {
-		return super.isFinished() || !Robot.driveTrain.controlledBy(this) || !Vision.isalive() || scan == ScanMode.NONE && !found;
+		return super.isFinished() || !Robot.driveTrain.controlledBy(this) || !Robot.vision.isAlive() || scan == ScanMode.NONE && !found;
 	}
 
 	public enum ScanMode {

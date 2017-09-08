@@ -3,7 +3,7 @@ package com.midcoastmaineiacs.Steamworks;
 import com.midcoastmaineiacs.Steamworks.auto.Auto;
 import com.midcoastmaineiacs.Steamworks.auto.Gear;
 import com.midcoastmaineiacs.Steamworks.auto.MMCommand;
-import com.midcoastmaineiacs.Steamworks.auto.Vision;
+import com.midcoastmaineiacs.Steamworks.auto.VisionServer;
 import edu.wpi.first.wpilibj.*;
 import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.livewindow.LiveWindow;
@@ -32,6 +32,8 @@ public class Robot extends IterativeRobot {
 	public static SendableChooser<Byte> pos;
 	/** Chosen auto routine */
 	public static SendableChooser<Command> autochooser;
+	public static VisionServer vision;
+	public static Thread visionThread;
 
 	public static DriveTrain driveTrain;
 	public static Climber climber;
@@ -65,7 +67,10 @@ public class Robot extends IterativeRobot {
 		LiveWindow.addActuator("Climber", "Climber", (Spark) climber.climber);
 		LiveWindow.addSensor("DriveTrain", "Gyro", driveTrain.gyro);
 
-		Vision.init();
+		//Vision.init();
+		vision = new VisionServer(5506);
+		visionThread = new Thread(vision);
+		visionThread.start();
 		// front camera (rope climber end)
 		CameraServer.getInstance().startAutomaticCapture(0).setExposureManual(40);
 		// back camera (gear end)
@@ -136,7 +141,8 @@ public class Robot extends IterativeRobot {
 
 		if (!rbWasPressed && joystick.getRawButton(5)) {
 			rbWasPressed = true;
-			Vision.requestCapture();
+			//Vision.requestCapture();
+			vision.requestCapture();
 			notifyDriver();
 		} else if (rbWasPressed && !joystick.getRawButton(5))
 			rbWasPressed = false;
@@ -153,17 +159,20 @@ public class Robot extends IterativeRobot {
 		// if Pi hasn't responded for a second, it's probably dead
 		// Pi "responds" by setting "true" to "Pi" every time it processes a frame
 		SmartDashboard.putBoolean("Pi", time < 50);
-		if (Vision.table.getBoolean("running", false)) {
+		/*if (Vision.table.getBoolean("running", false)) {
 			time = 0;
 			Vision.table.putBoolean("running", false);
 		} else
 			time++;
-		if (Vision.izgud() && !Vision.isalive()) {
+		if (Vision.izgud() && !Vision.isAlive()) {
 			// clearly the Pi isn't on to target the peg
 			Vision.table.putBoolean("sight", false);
 		}
-		SmartDashboard.putBoolean("Sight", Vision.izgud());
-
+		SmartDashboard.putBoolean("Sight", Vision.izgud());*/
+		if (vision.hasRecentUpdate())
+			time = 0;
+		else
+			time++;
 		// update selectors and pray the DS is still alive to make these choices...
 		starting = pos.getSelected();
 
@@ -171,12 +180,19 @@ public class Robot extends IterativeRobot {
 		// normally gyro data is inverted as robot starts backwards when powered on, so the "+ 180" flips it
 		SmartDashboard.putNumber("Heading", (driveTrain.getGyro() + 180) % 360);
 		// push vision data for ease of lining up and debugging
-		if (Vision.izgud()) {
+		/*if (Vision.izgud()) {
 			SmartDashboard.putNumber("Vision", Vision.getTurningAngle());
 			//Vision.getTurningAngle();
 			SmartDashboard.putNumber("Distance", Vision.getDistance());
 			SmartDashboard.putNumber("Camera distance", Vision.getCameraDistance());
 			SmartDashboard.putNumber("Camera angle", Math.toDegrees(Vision.getCameraAngle()));
+		}*/
+		if (vision.izgud()) {
+			SmartDashboard.putNumber("Vision", vision.getTurningAngle());
+			//Vision.getTurningAngle();
+			SmartDashboard.putNumber("Distance", vision.getDistance());
+			SmartDashboard.putNumber("Camera distance", vision.getCameraDistance());
+			SmartDashboard.putNumber("Camera angle", Math.toDegrees(vision.getCameraAngle()));
 		} else {
 			SmartDashboard.putNumber("Vision", 0);
 			SmartDashboard.putNumber("Distance", 0);

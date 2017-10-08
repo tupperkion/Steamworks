@@ -1,57 +1,47 @@
 package com.midcoastmaineiacs.Steamworks.auto;
 
-import edu.wpi.first.wpilibj.DriverStation;
+import com.midcoastmaineiacs.Steamworks.WebSocketTableServer;
+import org.java_websocket.WebSocket;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.net.ServerSocket;
-import java.net.Socket;
-
-public class VisionServer implements Runnable {
+public class VisionServer extends WebSocketTableServer {
+	private static final int PORT = 5506;
 	/** horizontal FOV of camera */
 	private static final double HORIZONTAL_FOV = Math.toRadians(62.2d);
 	private static final int CAMERA_WIDTH = 480;
-
 	/** distance from middle of bot to camera */
 	private static final double c = 11.5d;
 
-	private final int port;
-	private DataOutputStream outputStream = null;
-	@SuppressWarnings("FieldCanBeLocal")
-	private DataInputStream inputStream = null;
-	@SuppressWarnings("FieldCanBeLocal")
-	private ServerSocket serverSocket;
+	public VisionServer() {
+		super("VisionServer", PORT, true);
+	}
 
-	private boolean running = false;
-	private boolean izgud = false;
-	private double distance = 0d;
-	private double error = 0d;
+	@Override
+	protected void setDefaults() {
+		setBoolean("izgud", false);
+		setBoolean("capture", false);
+		setDouble("distance", 0);
+		setDouble("error", 0);
+	}
 
 	public boolean isAlive() {
-		return running;
+		return sockets.size() > 0;
+	}
+
+	public void setBlind() {
+		setBoolean("izgud", false);
 	}
 
 	public boolean izgud() {
-		if (!running) izgud = false;
-		return izgud;
-	}
-
-	public boolean hasRecentUpdate() {
-		if (running) {
-			running = false;
-			return true;
-		}
-		return false;
+		return getBoolean("izgud");
 	}
 
 	public double getCameraDistance() {
-		return distance;
+		return getDouble("distance");
 	}
 
 	@SuppressWarnings("WeakerAccess")
 	public double getError() {
-		return error;
+		return getDouble("distance");
 	}
 
 	public double getCameraAngle() {
@@ -91,71 +81,14 @@ public class VisionServer implements Runnable {
 		return getTurningAngle(getDistance());
 	}
 
-
 	public void requestCapture() {
-		if (outputStream != null)
-			try {
-				outputStream.writeUTF("capture");
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-	}
-
-	public VisionServer(int port) {
-		this.port = port;
+		setBoolean("capture", true);
 	}
 
 	@Override
-	public void run() {
-		try {
-			serverSocket = new ServerSocket(port);
-			Outer:
-			//noinspection InfiniteLoopStatement
-			while (true) {
-				Socket socket = serverSocket.accept();
-				socket.setKeepAlive(true);
-				outputStream = new DataOutputStream(socket.getOutputStream());
-				inputStream = new DataInputStream(socket.getInputStream());
-				while (true) {
-					try {
-						String msg = inputStream.readUTF();
-						if (msg.equalsIgnoreCase("izntgud")) {
-							running = true;
-							izgud = false;
-						} else if (msg.equalsIgnoreCase("dead")) {
-							running = false;
-							izgud = false;
-						} else if (msg.contains("izgud")) {
-							String[] split = msg.split(";");
-							if (split.length == 3) {
-								distance = Double.parseDouble(split[1]);
-								error = Double.parseDouble(split[2]);
-							}
-						}
-					} catch (Exception e) {
-						e.printStackTrace();
-						running = false;
-						try {
-							if (!socket.isClosed() && !socket.isConnected()) {
-								socket.close();
-								continue Outer;
-							}
-						} catch (Exception e2) {
-							e2.printStackTrace();
-						}
-					}
-					if (Thread.interrupted())
-						throw new InterruptedException();
-				}
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-			DriverStation.reportError("Error in vision server: " + e, true);
-			try {
-				serverSocket.close();
-			} catch (IOException e2) {
-				e2.printStackTrace();
-			}
-		}
+	public void onClose(WebSocket conn, int code, String reason, boolean remote) {
+		super.onClose(conn, code, reason, remote);
+		if (sockets.size() == 0)
+			setBoolean("izgud", false);
 	}
 }

@@ -129,6 +129,7 @@ public class DriveTrain extends MMSubsystem {
 		}
 	}
 
+	@Deprecated
 	public void driveLeftCurved(double speed) {
 		if (!ACCEL_CURVE) {
 			driveLeft(speed);
@@ -147,6 +148,7 @@ public class DriveTrain extends MMSubsystem {
 		}
 	}
 
+	@Deprecated
 	public void driveRightCurved(double speed) {
 		if (!ACCEL_CURVE) {
 			driveRight(speed);
@@ -162,6 +164,36 @@ public class DriveTrain extends MMSubsystem {
 			// right(lastRightSpeed - 0.04);
 			// else
 			driveRight(speed);
+		}
+	}
+
+	public void driveCurved(double left, double right) {
+		if (!ACCEL_CURVE) {
+			drive(left, right);
+			return;
+		}
+		double maxChange = Math.max(Math.abs(left - right), 0.04);
+		if (right > 0) {
+			if (right > lastRightSpeed + maxChange)
+				driveRight(lastRightSpeed + maxChange);
+			else
+				driveRight(right);
+		} else {
+			// if (speed < lastRightSpeed - maxChange)
+			// right(lastRightSpeed - maxChange);
+			// else
+			driveRight(right);
+		}
+		if (left > 0) {
+			if (left > lastLeftSpeed + maxChange)
+				driveLeft(lastLeftSpeed + maxChange);
+			else
+				driveLeft(left);
+		} else {
+			// if (speed < lastLeftSpeed - maxChange)
+			// left(lastLeftSpeed - maxChange);
+			// else
+			driveLeft(left);
 		}
 	}
 

@@ -1,9 +1,6 @@
 package com.midcoastmaineiacs.Steamworks;
 
-import com.midcoastmaineiacs.Steamworks.auto.Auto;
-import com.midcoastmaineiacs.Steamworks.auto.Gear;
-import com.midcoastmaineiacs.Steamworks.auto.MMCommand;
-import com.midcoastmaineiacs.Steamworks.auto.VisionServer;
+import com.midcoastmaineiacs.Steamworks.auto.*;
 import edu.wpi.first.wpilibj.*;
 import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.livewindow.LiveWindow;
@@ -25,6 +22,10 @@ public class Robot extends IterativeRobot {
 	public static final boolean PRACTICE_IS_COMPETITION = true;
 	/** will update based on FMS status, updates on robot init, and when teleop and auto modes are entered */
 	public static boolean competition = false;
+	/** if true, enable values being displayed on the smartdashboard */
+	public static final boolean ENABLE_SMARTDASHBOARD = false;
+	/** if true and ENABLE_SMARTDASHBOARD is true, use the smartdashboard instead of our dashboard for retrieving values */
+	public static final boolean PREFER_SMARTDASHBOARD = false;
 
 	// 1 = left; 2 = center; 3 = right
 	public static byte starting = 2;
@@ -42,8 +43,8 @@ public class Robot extends IterativeRobot {
 	public static final Joystick joystick = new Joystick(0);
 
 	public static Timer clock;
-
 	public static Thread mainThread;
+	public static DashboardServer dashboard;
 
 	@Override
 	public void robotInit() {
@@ -57,18 +58,15 @@ public class Robot extends IterativeRobot {
 
 		driveTrain.gyro.calibrate();
 
+		dashboard = new DashboardServer();
+
 		if (FORCE_COMPETITION) { // FORCE_COMPETITION should always be off except when testing competition-only features!
 			DriverStation.reportWarning("Force-competition mode is activated, MAKE SURE A PROGRAMMER KNOWS ABOUT THIS!", false);
 			competition = true;
 		}
 
-		LiveWindow.addActuator("DriveTrain", "Left", (VictorSP) driveTrain.left);
-		LiveWindow.addActuator("DriveTrain", "Right", (VictorSP) driveTrain.right);
-		LiveWindow.addActuator("Climber", "Climber", (Spark) climber.climber);
-		LiveWindow.addSensor("DriveTrain", "Gyro", driveTrain.gyro);
-
 		//Vision.init();
-		vision = new VisionServer(5506);
+		vision = new VisionServer();
 		visionThread = new Thread(vision);
 		visionThread.start();
 		// front camera (rope climber end)
@@ -76,33 +74,40 @@ public class Robot extends IterativeRobot {
 		// back camera (gear end)
 		CameraServer.getInstance().startAutomaticCapture(1).setExposureManual(50);
 		starting = (byte) DriverStation.getInstance().getLocation();
-		pos = new SendableChooser<>();
-		switch (starting) {
-			case (1):
-				pos.addDefault("Left", (byte) 1);
-				pos.addObject("Center", (byte) 2);
-				pos.addObject("Right", (byte) 3);
-				break;
-			case (3):
-				pos.addObject("Left", (byte) 1);
-				pos.addObject("Center", (byte) 2);
-				pos.addDefault("Right", (byte) 3);
-				break;
-			case (2):
-			default: // 'Center' is a safe bet.... right?
-				pos.addObject("Left", (byte) 1);
-				pos.addDefault("Center", (byte) 2);
-				pos.addObject("Right", (byte) 3);
-				break;
-		}
-		autochooser = new SendableChooser<>();
-		autochooser.addObject("Gear", new Auto(Auto.Mode.GEAR));
-		autochooser.addObject("Mobility", new Auto(Auto.Mode.SURGE));
-		autochooser.addDefault("Play dead", new Auto(Auto.Mode.PLAY_DEAD));
-		SmartDashboard.putData("Position", pos);
-		SmartDashboard.putData("Auto", autochooser);
 
-		driveTrain.gyro.calibrate();
+		if (ENABLE_SMARTDASHBOARD) {
+			LiveWindow.addActuator("DriveTrain", "Left", (VictorSP) driveTrain.left);
+			LiveWindow.addActuator("DriveTrain", "Right", (VictorSP) driveTrain.right);
+			LiveWindow.addActuator("Climber", "Climber", (Spark) climber.climber);
+			LiveWindow.addSensor("DriveTrain", "Gyro", driveTrain.gyro);
+			if (PREFER_SMARTDASHBOARD) {
+				pos = new SendableChooser<>();
+				switch (starting) {
+					case (1):
+						pos.addDefault("Left", (byte) 1);
+						pos.addObject("Center", (byte) 2);
+						pos.addObject("Right", (byte) 3);
+						break;
+					case (3):
+						pos.addObject("Left", (byte) 1);
+						pos.addObject("Center", (byte) 2);
+						pos.addDefault("Right", (byte) 3);
+						break;
+					case (2):
+					default: // 'Center' is a safe bet.... right?
+						pos.addObject("Left", (byte) 1);
+						pos.addDefault("Center", (byte) 2);
+						pos.addObject("Right", (byte) 3);
+						break;
+				}
+				autochooser = new SendableChooser<>();
+				autochooser.addObject("Gear", new Auto(Auto.Mode.GEAR));
+				autochooser.addObject("Mobility", new Auto(Auto.Mode.SURGE));
+				autochooser.addDefault("Play dead", new Auto(Auto.Mode.PLAY_DEAD));
+				SmartDashboard.putData("Position", pos);
+				SmartDashboard.putData("Auto", autochooser);
+			}
+		}
 
 		if (!FORCE_COMPETITION) {
 			//                              detect whether or not we're at a competition
@@ -111,8 +116,7 @@ public class Robot extends IterativeRobot {
 																							   DriverStation.getInstance().getMatchTime() > 0.0;
 			if (!competition && willEnableCompetition)
 				DriverStation.reportWarning("Competition mode activated", false);
-			if (!FORCE_COMPETITION)
-				competition = willEnableCompetition;
+			competition = willEnableCompetition;
 		}
 
 		// good to go, start the scheduler
@@ -147,60 +151,71 @@ public class Robot extends IterativeRobot {
 		} else if (rbWasPressed && !joystick.getRawButton(5))
 			rbWasPressed = false;
 
-		SmartDashboard.putBoolean("Competition mode", competition);
-		SmartDashboard.putBoolean("Enabled", Scheduler.enabled);
+		if (ENABLE_SMARTDASHBOARD) {
+			SmartDashboard.putBoolean("Competition mode", competition);
+			SmartDashboard.putBoolean("Enabled", Scheduler.enabled);
 
-		// report DriveTrain state
-		SmartDashboard.putBoolean(" Disabled", driveTrain.getState() == DriveTrain.State.DISABLED);
-		SmartDashboard.putBoolean(" Teleop", driveTrain.getState() == DriveTrain.State.TELEOP);
-		SmartDashboard.putBoolean(" Command", driveTrain.getState() == DriveTrain.State.COMMAND);
-		SmartDashboard.putBoolean(" Autopilot", driveTrain.getState() == DriveTrain.State.AUTOPILOT);
+			// report DriveTrain state
+			SmartDashboard.putBoolean(" Disabled", driveTrain.getState() == DriveTrain.State.DISABLED);
+			SmartDashboard.putBoolean(" Teleop", driveTrain.getState() == DriveTrain.State.TELEOP);
+			SmartDashboard.putBoolean(" Command", driveTrain.getState() == DriveTrain.State.COMMAND);
+			SmartDashboard.putBoolean(" Autopilot", driveTrain.getState() == DriveTrain.State.AUTOPILOT);
+
+			if (PREFER_SMARTDASHBOARD)
+				// update selectors and pray the DS is still alive to make these choices...
+				starting = pos.getSelected();
+			else
+				starting = (byte) dashboard.getDouble("pos");
+			// push gyro data in case camera mount falls (also useful for debugging)
+			// normally gyro data is inverted as robot starts backwards when powered on, so the "+ 180" flips it
+			SmartDashboard.putNumber("Heading", (driveTrain.getGyro() + 180) % 360);
+		} else
+			starting = (byte) dashboard.getDouble("pos");
 
 		// if Pi hasn't responded for a second, it's probably dead
 		// Pi "responds" by setting "true" to "Pi" every time it processes a frame
-		SmartDashboard.putBoolean("Pi", time < 50);
-		/*if (Vision.table.getBoolean("running", false)) {
-			time = 0;
-			Vision.table.putBoolean("running", false);
-		} else
-			time++;
-		if (Vision.izgud() && !Vision.isAlive()) {
-			// clearly the Pi isn't on to target the peg
-			Vision.table.putBoolean("sight", false);
-		}
-		SmartDashboard.putBoolean("Sight", Vision.izgud());*/
-		if (vision.hasRecentUpdate())
+		/*if (vision.hasRecentUpdate())
 			time = 0;
 		else
 			time++;
-		// update selectors and pray the DS is still alive to make these choices...
-		starting = pos.getSelected();
-
-		// push gyro data in case camera mount falls (also useful for debugging)
-		// normally gyro data is inverted as robot starts backwards when powered on, so the "+ 180" flips it
-		SmartDashboard.putNumber("Heading", (driveTrain.getGyro() + 180) % 360);
-		// push vision data for ease of lining up and debugging
-		/*if (Vision.izgud()) {
-			SmartDashboard.putNumber("Vision", Vision.getTurningAngle());
-			//Vision.getTurningAngle();
-			SmartDashboard.putNumber("Distance", Vision.getDistance());
-			SmartDashboard.putNumber("Camera distance", Vision.getCameraDistance());
-			SmartDashboard.putNumber("Camera angle", Math.toDegrees(Vision.getCameraAngle()));
-		}*/
-		if (vision.izgud()) {
-			SmartDashboard.putNumber("Vision", vision.getTurningAngle());
-			//Vision.getTurningAngle();
-			SmartDashboard.putNumber("Distance", vision.getDistance());
-			SmartDashboard.putNumber("Camera distance", vision.getCameraDistance());
-			SmartDashboard.putNumber("Camera angle", Math.toDegrees(vision.getCameraAngle()));
-		} else {
-			SmartDashboard.putNumber("Vision", 0);
-			SmartDashboard.putNumber("Distance", 0);
-			SmartDashboard.putNumber("Camera distance", 0);
-			SmartDashboard.putNumber("Camera angle", 0);
+		if (time > 50)
+			vision.setDead();
+		if (vision.izgud() && !vision.isAlive())
+			// clearly the Pi isn't on to target the peg
+			vision.setBlind();*/
+		if (ENABLE_SMARTDASHBOARD) {
+			// push vision data for ease of lining up and debugging
+			SmartDashboard.putBoolean("Sight", vision.isAlive() && vision.izgud());
+			SmartDashboard.putBoolean("Pi", vision.isAlive());
+			if (vision.izgud()) {
+				SmartDashboard.putNumber("Vision", vision.getTurningAngle());
+				//Vision.getTurningAngle();
+				SmartDashboard.putNumber("Distance", vision.getDistance());
+				SmartDashboard.putNumber("Camera distance", vision.getCameraDistance());
+				SmartDashboard.putNumber("Camera angle", Math.toDegrees(vision.getCameraAngle()));
+			} else {
+				SmartDashboard.putNumber("Vision", 0);
+				SmartDashboard.putNumber("Distance", 0);
+				SmartDashboard.putNumber("Camera distance", 0);
+				SmartDashboard.putNumber("Camera angle", 0);
+			}
+			// report power setting
+			SmartDashboard.putBoolean("Power", fullPower);
 		}
-		// report power setting
-		SmartDashboard.putBoolean("Power", fullPower);
+
+		dashboard.setBoolean("pi", vision.isAlive());
+		dashboard.setBoolean("vision", vision.izgud());
+		dashboard.setBoolean("competition", competition);
+		dashboard.setBoolean("power", fullPower);
+		dashboard.setBoolean("enabled", Scheduler.enabled);
+		dashboard.setDouble("heading", driveTrain.getGyroMod() - 180);
+
+		// debug values
+		dashboard.setDouble("calc angle", vision.getTurningAngle());
+		dashboard.setDouble("calc distance", vision.getDistance());
+		dashboard.setDouble("cam angle", vision.getCameraAngle());
+		dashboard.setDouble("cam distance", vision.getCameraDistance());
+		dashboard.setBoolean("endgame", endgamePassed);
 	}
 
 	@Override
@@ -215,7 +230,8 @@ public class Robot extends IterativeRobot {
 											"Otherwise, tell a programmer.", false);
 		else
 			Scheduler.cancelAllCommands();
-		SmartDashboard.putBoolean("Endgame", false);
+		if (ENABLE_SMARTDASHBOARD)
+			SmartDashboard.putBoolean("Endgame", false);
 		endgamePassed = false;
 	}
 
@@ -243,10 +259,11 @@ public class Robot extends IterativeRobot {
 		driveTrain.gyro.reset();
 		Scheduler.enabled = true;
 		Scheduler.enableTeleop(false);
-		auto = autochooser.getSelected();
-		starting = pos.getSelected();
-		if (auto != null)
-			auto.start();
+		if (ENABLE_SMARTDASHBOARD && PREFER_SMARTDASHBOARD)
+			auto = autochooser.getSelected();
+		else
+			auto = new Auto(dashboard.getString("auto").equals("gear") ? Auto.Mode.GEAR : dashboard.getString("auto").equals("mobility") ? Auto.Mode.SURGE : Auto.Mode.PLAY_DEAD);
+		auto.start();
 	}
 
 	public static boolean killSwitch() {
@@ -341,7 +358,8 @@ public class Robot extends IterativeRobot {
 	public void teleopPeriodic() {
 		// Endgame notification
 		if (!endgamePassed && DriverStation.getInstance().getMatchTime() > 0 && DriverStation.getInstance().getMatchTime() <= ENDGAME) {
-			SmartDashboard.putBoolean("Endgame", true);
+			if (ENABLE_SMARTDASHBOARD)
+				SmartDashboard.putBoolean("Endgame", true);
 			endgamePassed = true;
 			notifyDriver();
 		}
@@ -355,14 +373,15 @@ public class Robot extends IterativeRobot {
 				double turn = -Math.sin(Math.toRadians(joystick.getPOV())) + joystick.getRawAxis(4); // 4 = right X
 				double throttle = joystick.getRawAxis(2) / 2 + joystick.getRawAxis(3);
 				driveTrain.driveArcade(forward * throttle, turn * throttle);
+				if (climber.controlledByTeleop())
+					climber.stop();
 			} else {
 				// left axis = 1, right axis = 5
 				double leftSpeed = -joystick.getRawAxis(1);
 				double rightSpeed = -joystick.getRawAxis(5);
 				//noinspection ConstantConditions
-				driveTrain.driveLeftCurved(!DEAD_ZONE || Math.abs(leftSpeed) > 0.15 ? leftSpeed * (fullPower ? 1 : 0.5) : 0);
-				//noinspection ConstantConditions
-				driveTrain.driveRightCurved(!DEAD_ZONE || Math.abs(rightSpeed) > 0.15 ? rightSpeed * (fullPower ? 1 : 0.5) : 0);
+				driveTrain.driveCurved(!DEAD_ZONE || Math.abs(leftSpeed) > 0.15 ? leftSpeed * (fullPower ? 1 : 0.5) : 0,
+					!DEAD_ZONE || Math.abs(rightSpeed) > 0.15 ? rightSpeed * (fullPower ? 1 : 0.5) : 0);
 			}
 			if (joystick.getRawButton(4)) {
 				//autochooser.getSelected().start();
@@ -404,6 +423,8 @@ public class Robot extends IterativeRobot {
 		} else if (lbWasPressed && !joystick.getRawButton(5)) {
 			lbWasPressed = false;
 		}
+		if (killSwitch())
+			Scheduler.cancelAllCommands();
 	}
 
 	/**

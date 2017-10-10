@@ -1,0 +1,36 @@
+plugins {
+    id "java"
+    id "eclipse"
+    id "idea"
+    id "jaci.openrio.gradle.GradleRIO" version "2017.2.3"
+}
+
+frc {
+    team = "5506"
+    robotClass = "com.midcoastmaineiacs.Steamworks.Robot"
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+    compile wpilib()
+    compile talonSrx()
+    compile navx()
+    compile "org.java-websocket:Java-WebSocket:1.3.4"
+}
+
+def robotManifest = {
+    attributes 'Main-Class': 'edu.wpi.first.wpilibj.RobotBase'
+    attributes 'Robot-Class': frc.robotClass
+}
+
+jar {
+    from configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+    manifest robotManifest
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '3.2.1'
+}

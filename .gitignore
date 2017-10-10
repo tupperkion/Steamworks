@@ -1,3 +1,7 @@
+.idea/
+.gradle/
+build/
+fileTemplates/
+*.ipr
+*.iws
 *~
-bin/*
-/bin/

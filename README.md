@@ -182,13 +182,25 @@ The drive train implements a state system with very complicated-looking code. It
 
 The drive train also has an acceleration curve that takes effect whenever `driveLeftCurved` or `driveRightCurved` is used. It mitigates sudden acceleration by limiting how much the motor speed can change each time the method is called.
 
+## `WebSocketTableServer`
+
+The `WebSocketTableServer` behaves similarly to the wpilib NetworkTables server. Initialize it with a name (for logging purposes), and a port. This will host a local server listening on `port`, which clients can connect to. [More info](WebSocketTable.md).
+
+### Dashboard
+
+The `DashboardServer` runs on port `5800`. TODO
+
+### VisionServer
+
+TODO
+
 ## Robot (main class)
 
 The `Robot` class is the main class that ties everything together. It also contains the functionality formerly present in the `Teleop` and `OI` classes. It...
 
  - instantiates all subsystems
  - calibrates sensors
- - manages the SmartDashboard
+ - manages the MMDashboard
  - instantiates and starts the Scheduler
  - ensures that the Scheduler is put in the right state (`enabled` and `teleop` statuses) whenever the robot state changes
  - resets sensors at the beginning of the match
@@ -234,12 +246,6 @@ There is a static `Robot.notifyDriver()` method which simply creates and starts 
 - [ ] Update the mappings to reflect your changes (in the giant comment in `Robot.java` and in the [Driving > Controls](#controls) section of this document).
 - [ ] Test!
 
-## SmartDashboard indicators
-
- - [ ] Most indicators should be put in `robotPeriodic()`.
- - [ ] Make sure you update the [Driving > SmartDashboard > Indicators](#indicators) section of this document.
- - [ ] Test!
-
 # Auto
 
 The auto routine at the time of writing for the 2017 _STEAMWORKS_ challenge has three modes. The auto routine is handled by the `Auto` command and the mode is specified by an enumerator containing the possible modes.
@@ -262,7 +268,7 @@ If you have looked at some older code or code for previous years, you may have n
 
 # Driving
 
-Jeffrey `v3.0` uses one controller for driving and the SmartDashboard for feedback.
+Jeffrey `v3.0` uses one controller for driving and the MMDashboard for feedback.
 
 ## Controls
 
@@ -285,51 +291,6 @@ Button | Description
 `Start`               | **Enable** the robot (if the driver station allows).
 `..................`  |
 
-## SmartDashboard
+## MMDashboard
 
-There are several indicators and choosers on the SmartDashboard. There are also two cameras available, each facing opposite directions.
-
-> **Note:** It is **important** to make sure that before every match, the choosers reflect the conditions of the match. This is the driver's responsibility.
-
-### Auto chooser
-
-The auto chooser is used to pick the autonomous mode to be used in a match.
-
-Mode | Description
-:---: | ---
-`Gear`       | Attempts to place a gear on the peg. _Make sure the position selector is correct._
-`Play dead`  | Does nothing.
-`Mobility`   | If, according to the position selector, the robot is _not_ in the middle, drives forward for 2 seconds to cross the line and get 5 auto points. Use this if `Gear` is not an option and this is.
-`.........`  |
-
-### Position selector
-
-The position selector simply specifies where the robot starts the match. Just choose `Left`, `Center`, or `Right` accordingly.
-
-### Indicators
-
-There are several indicators that report statuses to the SmartDashboard. It is important to know what these mean.
-
-Indicator | Description
-:---: | ---
-`Competition mode`  | This is whether or not the robot thinks it's at a competition (or the DS is in practice mode). This primarily allows autonomous commands to keep running into the teleop period.
-`Enabled`           | This is whether or not the robot is enabled. At the moment this reflects what is shown by the RSL light.
-`Pi`                | This is whether or not the Raspberry Pi is up and running, regardless of whether or not it can see the peg.
-`Sight`             | This is whether or not the Raspberry Pi thinks it can see the peg.
-`Power`             | This is how much power is being given to the tank drive controls. Green = 100%, red = 50%.
-`................`  |
-
-There are also four additional indicators that display the state of the drive train. Which ever indicator is green is the state of the drive train, while the others will be red.
-
-State | Description
-:---: | ---
-`Disabled`   | The drive train isn't currently doing anything.
-`Teleop`     | The drive train is at the mercy of the driver's controller.
-`Command`    | The drive train is being controlled by an autonomous command, regardless of whether it was started during teleop or started along with the autonomous period.
-`Autopilot`  | Similar to `Command` but with some different technical stuff that isn't important if you aren't a programmer.
-
-> **NOTE:** As stated in the [Drive train > States](#states) section above, this does not reflect the actual state of the robot. This is what the drive train _thinks it's doing_.
->
-> E.g. if the auto command ends before the end of the autonomous period, the drive train will switch to the `Disabled` state, even though the robot is still enabled.
->
-> If there is an autonomous command running and the robot is disabled (and the command is frozen, not cancelled), the drive train will stay in the `Command` or `Autopilot` state. This doesn't mean it's moving (or trying to move), it just means it's still under the control of a command.
+TODO

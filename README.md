@@ -190,6 +190,19 @@ The `WebSocketTableServer` behaves similarly to the wpilib NetworkTables server.
 
 The `DashboardServer` runs on port `5800`. This is connected to by the MMDashboard automatically. It contains data to be displayed to the drivers, debugging data, and the name of the robot, `Jeffrey`, to allow the MMDashboard to recognize how to interpret the data. It is not recessive.
 
+Updates to this table are generally done in `robotPeriodic`. It is stored as a static `dashboard` variable in the main Robot class. To send a value, simply use the `set...` methods provided by `WebSocketTableServer`. Example:
+
+```java
+@Override
+protected void robotPeriodic() {
+	// ...
+	dashboard.setBoolean("enabled", Scheduler.enabled);
+	// ...
+}
+```
+
+The MMDashboard won't show new values by default. The webpage must be edited to recognize these values, however, clicking on the compass will show a debug screen which will show all of the values on the table in their raw form, even if they aren't coded to be used by the page. This is usable for debugging code. Anywhere in the code, you can reference `Robot.dashboard` to send a value to the DS for debugging.
+
 ### VisionServer
 
 The `VisionServer` runs on port `5506`. This is connected to by the Raspberry Pi, which handles vision processing. This server is recessive, meaning it will update the table to the contents of whichever client has most recently connected whenever a new connection is opened.
@@ -287,8 +300,8 @@ Button | Description
 `X`                   | Climb down at half power. Use at demonstrations.
 `Right trigger`       | Climb up. The distance at which you pull the trigger controls how fast the climber works. _Will not_ work if `D-Pad` is held down, as this becomes the throttle.
 `Left trigger`        | Climb down. Use at demonstrations. Same rules as above.
-`Back`                | **Disable** the robot.
-`Start`               | **Enable** the robot (if the driver station allows).
+`Back`                | **Disable** the robot. Motors will stop, but the RSL light will stay blinking.
+`Start`               | **Enable** the robot (if the RSL light is blinking).
 `..................`  |
 
 ## MMDashboard

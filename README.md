@@ -188,11 +188,11 @@ The `WebSocketTableServer` behaves similarly to the wpilib NetworkTables server.
 
 ### Dashboard
 
-The `DashboardServer` runs on port `5800`. TODO
+The `DashboardServer` runs on port `5800`. This is connected to by the MMDashboard automatically. It contains data to be displayed to the drivers, debugging data, and the name of the robot, `Jeffrey`, to allow the MMDashboard to recognize how to interpret the data. It is not recessive.
 
 ### VisionServer
 
-TODO
+The `VisionServer` runs on port `5506`. This is connected to by the Raspberry Pi, which handles vision processing. This server is recessive, meaning it will update the table to the contents of whichever client has most recently connected whenever a new connection is opened.
 
 ## Robot (main class)
 

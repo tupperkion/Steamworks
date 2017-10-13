@@ -246,7 +246,7 @@ The drive train also has an acceleration curve that takes effect whenever `drive
 
 ## `WebSocketTableServer`
 
-The `WebSocketTableServer` behaves similarly to the wpilib NetworkTables server. Initialize it with a name (for logging purposes), and a port. This will host a local server listening on `port`, which clients can connect to. [More info](WebSocketTable.md).
+The `WebSocketTableServer` behaves similarly to the wpilib NetworkTables server. Initialize it with a name (for logging purposes), and a port. This will host a local server listening on `port`, which clients can connect to. [What is a WebSocketTable and how do I use it?](WebSocketTable.md)
 
 ### Dashboard
 

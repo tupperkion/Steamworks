@@ -1,6 +1,6 @@
 # `WebSocketTable`
 
-WebSocketTables are similar to the wpilib NetworkTables, in that they allow a synchronized table to be stored between multiple devices. They work differently at a fundamental level though, which improves compatibility and performance in many cases.
+WebSocketTables are similar to the WPILib NetworkTables, in that they allow a synchronized table to be stored between multiple devices. They work differently at a fundamental level though, which improves compatibility and performance in many cases.
 
 WebSocketTables run by using WebSockets as a pipeline, which allows for easy compability with JavaScript. Unlike with NetworkTables, updates are sent as soon as a change is made in a table, ensuring minimal latency. WebSocketTables currently support Strings, doubles, and boolean values.
 

@@ -26,24 +26,25 @@ Starting [here](https://wpilib.screenstepslive.com/s/4485/m/13809) and reading m
  5. [Commands](#commands)
 	 1. [Starting commands](#starting-commands)
 	 2. [Active commands](#active-commands)
- 6. [`Series`](#series)
- 7. [`DriveCommand`](#drivecommand)
- 8. [Drive train](#drive-train)
+	 3. [Frozen commands](#frozen-commands)
+	 3. [`Series`](#series)
+	 4. [`DriveCommand`](#drivecommand)
+ 6. [Drive train](#drive-train)
 	 1. [Autopilot](#autopilot)
 	 2. [States](#states)
 	 3. [Acceleration curve](#acceleration-curve)
- 9. [`WebSocketTableServer`](#websockettableserver)
+ 7. [`WebSocketTableServer`](#websockettableserver)
 	 1. [Dashboard](#dashboard)
 	 2. [VisionServer](#visionserver)
- 10. [`Robot` (main class)](#robot-main-class)
- 11. [`Notifier`](#notifier)
- 12. [Checklists for adding new features](#checklists-for-adding-new-features)
+ 8. [`Robot` (main class)](#robot-main-class)
+ 9. [`Notifier`](#notifier)
+ 10. [Checklists for adding new features](#checklists-for-adding-new-features)
 	 1. [Subsystems](#subsystems-1)
 	 2. [Commands](#commands-1)
 	 3. [Teleop controls](#teleop-controls)
- 13. [Auto](#auto)
- 14. [Removed classes](#removed-classes)
- 15. [Driving](#driving)
+ 11. [Auto](#auto)
+ 12. [Removed classes](#removed-classes)
+ 13. [Driving](#driving)
 	 1. [Controls](#controls)
 	 2. [MMDashboard](#mmdashboard)
 
@@ -146,7 +147,15 @@ The `MMCommand` class adds a host of new features:
 
 > **Note:** Be careful when starting commands within commands. If you start a command within an `execute` block, make sure you don't accidentally create a condition where the parent command will flood the scheduler with tons of child commands. Make use of `releaseForChildren` and the `requireChildren` method and variable. `requireChildren` will start as `false` and be set to `true` after `releaseForChildren` is called. See the code for `Gear` for an example of this.
 
-> [`Table of Contents`](#table-of-contents)
+### Frozen commands
+
+When the robot turns on, it will automatically detect whether or not it's at a competition based on if it's connected to the FMS (or the DS is in practice mode). If so, it will enable a "competition mode" flag which can change the behavior of the robot. The biggest difference is that when the Scheduler gets disabled, passive commands behave the same way (meaning they keep running), while active commands will _not_ get cancelled, as they would otherwise. Instead they get "frozen." This keeps them alive but they will not get executed on by the Scheduler. They will remain in the schedule, dormant until the Scheduler is re-enabled. As well, if the `timeout` method is used for timing, the timing will pause while the command is dormant. When the Scheduler is re-enabled, the `resume` method of the command is called, then execution will resume as normal. **This means that in competition mode, disabling the robot will not cancel the commands that are running. You must hit the kill switch (A button at the time of writing) to force cancel all commands.** Otherwise, the robot may start moving again as soon as it gets re-enabled, even just in Teleop.
+
+> For safety, a warning is sent to the DS whenever the Scheduler is disabled while in competition mode, which would mean any commands that were running were not canceled.
+
+> The Scheduler will continue to check `isCanceled()` even when a command is dormant, and if the command is canceled, it will be run in order to allow the command to shut down. This can happen even when the robot is disabled.
+
+Competition mode can be forcibly enabled by changing the static `FORCE_COMPETITION` constant in `Robot.java` to `true`. _*Important:* this is only to be used for testing purposes, and a scary warning will be sent to the dashboard if this is enabled. Do not do this unless you have to test a competition-only feature._
 
 ### `Series`
 
@@ -159,8 +168,6 @@ It will stop running once all of its children have finished running, and will no
 There is a `Series.Parallel` class which behaves similarly to the `Series`, but it will run all commands at the same time, and stop itself once all commands have finished. A `Series` can be fed into a `Parallel` and vice versa. The `Parallel` class extends `Series`, which extends `MMCommand`.
 
 > `Series` and `Parallel` can handle passive commands, active commands, or a combination of the two.
-
-> [`Table of Contents`](#table-of-contents)
 
 ### `DriveCommand`
 

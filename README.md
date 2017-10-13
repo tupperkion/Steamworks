@@ -149,7 +149,13 @@ The `MMCommand` class adds a host of new features:
 
 ### Frozen commands
 
-When the robot turns on, it will automatically detect whether or not it's at a competition based on if it's connected to the FMS (or the DS is in practice mode). If so, it will enable a "competition mode" flag which can change the behavior of the robot. The biggest difference is that when the Scheduler gets disabled, passive commands behave the same way (meaning they keep running), while active commands will _not_ get cancelled, as they would otherwise. Instead they get "frozen." This keeps them alive but they will not get executed on by the Scheduler. They will remain in the schedule, dormant until the Scheduler is re-enabled. As well, if the `timeout` method is used for timing, the timing will pause while the command is dormant. When the Scheduler is re-enabled, the `resume` method of the command is called, then execution will resume as normal. **This means that in competition mode, disabling the robot will not cancel the commands that are running. You must hit the kill switch (A button at the time of writing) to force cancel all commands.** Otherwise, the robot may start moving again as soon as it gets re-enabled, even just in Teleop.
+When the robot turns on, it will automatically detect whether or not it's at a competition based on if it's connected to the FMS (or the DS is in practice mode). If so, it will enable a "competition mode" flag which can change the behavior of the robot.
+
+The biggest difference is that when the Scheduler gets disabled, passive commands behave the same way (meaning they keep running), while active commands will _not_ get cancelled, as they would otherwise. Instead they get "frozen." This keeps them alive but they will not get executed on by the Scheduler. They will remain in the schedule, dormant until the Scheduler is re-enabled.
+
+As well, if the `timeout` method is used for timing, the timing will pause while the command is dormant. Note that this does not happen if the WPILib `setTimeout` method is used. When that is used, the command will continue to timeout when the robot is disabled, which may be desired in some cases.
+
+When the Scheduler is re-enabled, the `resume` method of the command is called, then execution will resume as normal. **This means that in competition mode, disabling the robot will not cancel the commands that are running. You must hit the kill switch (A button at the time of writing) to force cancel all commands.** Otherwise, the robot may start moving again as soon as it gets re-enabled, even just in Teleop.
 
 > For safety, a warning is sent to the DS whenever the Scheduler is disabled while in competition mode, which would mean any commands that were running were not canceled.
 

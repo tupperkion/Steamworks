@@ -61,9 +61,13 @@ Make sure you have IntelliJ and Java 8 installed. GradleRIO is already built-in 
 
 That's the magic command. The nice thing about GradleRIO is you don't even have to load up your IDE to push code. However, in case you do have IntelliJ open, it is possible to set up the "Run code" button to do this. We won't get into that here yet, but you can talk to your friendly neighborhood programming captain for more information.
 
+> [`Table of Contents`](#table-of-contents)
+
 # Programming!
 
 This project builds on top of the [command-based programming](https://wpilib.screenstepslive.com/s/4485/m/13809/c/88893) already present in wpilib. This documentation assumes you have already read that section and are reasonably familiar with it. This simply discusses what is _different_ between our code and what is documented there.
+
+> [`Table of Contents`](#table-of-contents)
 
 ## Scheduler
 
@@ -89,6 +93,8 @@ The Scheduler class extends `TimerTask` and can be instantiated and used for cre
 
 Commands are started by `Scheduler.add(Command)`. `Command.start()` should work for all commands still, but some commands may need to have their `start()` methods manually changed to use `add()` (see [starting commands](#starting-commands) below).
 
+> [`Table of Contents`](#table-of-contents)
+
 ## Subsystems
 
 All subsystems extend an `MMSubsystem` class, which extends the WPILib `Subsystem` class. This expands upon the normal WPILib subsystem, adding new features:
@@ -98,6 +104,8 @@ All subsystems extend an `MMSubsystem` class, which extends the WPILib `Subsyste
  - `MMSubsystem` also provides a `controlledByTeleop()` method which returns true when teleop is enabled (according to the Scheduler) and the subsystem is currently _not_ controlled by any command. This implies that the subsystem should be responding to controller inputs from the driver station.
  
 > If this doesn't make sense, just keep reading.
+
+> [`Table of Contents`](#table-of-contents)
 
 ## Commands
 
@@ -138,6 +146,8 @@ The `MMCommand` class adds a host of new features:
 
 > **Note:** Be careful when starting commands within commands. If you start a command within an `execute` block, make sure you don't accidentally create a condition where the parent command will flood the scheduler with tons of child commands. Make use of `releaseForChildren` and the `requireChildren` method and variable. `requireChildren` will start as `false` and be set to `true` after `releaseForChildren` is called. See the code for `Gear` for an example of this.
 
+> [`Table of Contents`](#table-of-contents)
+
 ### `Series`
 
 A `Series` is an active command that simply runs each argument it given in it's constructor in parallel. It is an _active_ command, as it has the ability to start other active commands. It replaces the functionality of `CommandGroup`.
@@ -150,6 +160,8 @@ There is a `Series.Parallel` class which behaves similarly to the `Series`, but 
 
 > `Series` and `Parallel` can handle passive commands, active commands, or a combination of the two.
 
+> [`Table of Contents`](#table-of-contents)
+
 ### `DriveCommand`
 
 The `DriveCommand` is a convenient way of moving the drive train in a particular manner. Currently there are two forms of the constructor. One form accepts two doubles and will drive straight (using the gyro to maintain heading) at a set speed for a set period of time. The other form accepts three doubles and will set each side of the drive train to an individually specified speed for a set period of time. The timing uses the custom `timeout()` method, meaning it will be paused when the command is frozen.
@@ -159,6 +171,8 @@ Example line of code that drives forward at 50% power for 2 seconds, stops for 5
 ```java
 (new Series(new DriveCommand(0.5, 2), new DriveCommand(0, 5), new DriveCommand(-0.5, 2))).start();
 ```
+
+> [`Table of Contents`](#table-of-contents)
 
 ## Drive train
 
@@ -214,6 +228,8 @@ The drive train implements a state system with very complicated-looking code. It
 
 The drive train also has an acceleration curve that takes effect whenever `driveLeftCurved` or `driveRightCurved` is used. It mitigates sudden acceleration by limiting how much the motor speed can change each time the method is called.
 
+> [`Table of Contents`](#table-of-contents)
+
 ## `WebSocketTableServer`
 
 The `WebSocketTableServer` behaves similarly to the wpilib NetworkTables server. Initialize it with a name (for logging purposes), and a port. This will host a local server listening on `port`, which clients can connect to. [More info](WebSocketTable.md).
@@ -239,6 +255,8 @@ The MMDashboard won't show new values by default. The webpage must be edited to 
 
 The `VisionServer` runs on port `5506`. This is connected to by the Raspberry Pi, which handles vision processing. This server is recessive, meaning it will update the table to the contents of whichever client has most recently connected whenever a new connection is opened.
 
+> [`Table of Contents`](#table-of-contents)
+
 ## `Robot` (main class)
 
 The `Robot` class is the main class that ties everything together. It also contains the functionality formerly present in the `Teleop` and `OI` classes. It...
@@ -263,6 +281,8 @@ The `Notifier` is a (at the time of writing, the only) passive command in the pr
 There is a static `Robot.notifyDriver()` method which simply creates and starts a `Notifier`. This method will return immediately, even before the notifier finishes, and as such, will not interrupt the flow of the code calling it.
 
 > The `Notifier` is a passive command that _is_ set to run when disabled, and will be fully functional no matter what state the robot is in.
+
+> [`Table of Contents`](#table-of-contents)
 
 # Checklists for adding new features
 
@@ -291,6 +311,8 @@ There is a static `Robot.notifyDriver()` method which simply creates and starts 
 - [ ] Update the mappings to reflect your changes (in the giant comment in `Robot.java` and in the [Driving > Controls](#controls) section of this document).
 - [ ] Test!
 
+> [`Table of Contents`](#table-of-contents)
+
 # Auto
 
 The auto routine at the time of writing for the 2017 _STEAMWORKS_ challenge has three modes. The auto routine is handled by the `Auto` command and the mode is specified by an enumerator containing the possible modes.
@@ -303,6 +325,8 @@ The auto routine at the time of writing for the 2017 _STEAMWORKS_ challenge has 
 
 `Auto` and `Gear` demonstrate good use of `Series`, `DriveCommand`, and `releaseForChildren()`. Look at them for examples of usage of these features.
 
+> [`Table of Contents`](#table-of-contents)
+
 # Removed classes
 
 If you have looked at some older code or code for previous years, you may have noticed a few extra classes that have been merged elsewhere. Here's the three big ones:
@@ -310,6 +334,8 @@ If you have looked at some older code or code for previous years, you may have n
  - `Teleop` is no longer a command. All of the code that used to be in the `Teleop` command(s) is now in `Robot.teleopPeriodic()`
  - `RobotMap` is no longer used. It had no purpose. The motor controllers and sensors are now instantiated by the subsystems themselves.
  - `OI` is also no longer used. The joysticks are now completely handled within the `Robot` class. `Robot.joystick` is a lot nicer than `Robot.oi.getDriverJoystick()`, especially since now that the teleop controls are handled in `teleopPeriodic`, simply `joystick` is usually sufficient.
+
+> [`Table of Contents`](#table-of-contents)
 
 # Driving
 
@@ -339,3 +365,5 @@ Button | Description
 ## MMDashboard
 
 TODO
+
+> [`Table of Contents`](#table-of-contents)

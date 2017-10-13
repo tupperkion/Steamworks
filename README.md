@@ -155,7 +155,7 @@ When the robot turns on, it will automatically detect whether or not it's at a c
 
 > The Scheduler will continue to check `isCanceled()` even when a command is dormant, and if the command is canceled, it will be run in order to allow the command to shut down. This can happen even when the robot is disabled.
 
-Competition mode can be forcibly enabled by changing the static `FORCE_COMPETITION` constant in `Robot.java` to `true`. _*Important:* this is only to be used for testing purposes, and a scary warning will be sent to the dashboard if this is enabled. Do not do this unless you have to test a competition-only feature._
+Competition mode can be forcibly enabled by changing the static `FORCE_COMPETITION` constant in `Robot.java` to `true`. _**Important:** this is only to be used for testing purposes, and a scary warning will be sent to the dashboard if this is enabled. Do not do this unless you have to test a competition-only feature._
 
 ### `Series`
 

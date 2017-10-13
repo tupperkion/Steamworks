@@ -307,7 +307,7 @@ There is a static `Robot.notifyDriver()` method which simply creates and starts 
 ## Teleop controls
 
 - [ ] Find out where to put the new controls in `teleopPeriodic()`. If there are already controls for that subsystem, then find the `if (subsystem.controlledByTeleop()) {` block for that subsystem. Otherwise, make one (make sure it's after the `if (!Scheduler.enabled) return true;` line).
-- [ ] Code the controls. Check the mappings to make sure it won't conflict with other controls and make any modifications necessary. The `joystick` variable is what you need for the joystick, and the subsystems are also stored as `Robot` variables. Anywhere where you call `getRawAxis(number)` or `getRawButton(number)`, put in a command that specifies what button or axis that number is referring to.
+- [ ] Code the controls. Check the mappings to make sure it won't conflict with other controls and make any modifications necessary. The `joystick` variable is what you need for the joystick, and the subsystems are also stored as `Robot` variables. Anywhere where you call `getRawAxis(number)` or `getRawButton(number)`, put in a comment that specifies what button or axis that number is referring to.
 - [ ] Update the mappings to reflect your changes (in the giant comment in `Robot.java` and in the [Driving > Controls](#controls) section of this document).
 - [ ] Test!
 

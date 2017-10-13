@@ -15,6 +15,38 @@ And most importantly...
  
 Starting [here](https://wpilib.screenstepslive.com/s/4485/m/13809) and reading more about sensors and other things will also serve you well, but the 3 items above are the most important.
 
+# Table of Contents
+
+ 1. [Setting up a workspace](#setting-up-a-workspace)
+	 1. [Getting started](#getting-started)
+	 2. [Pushing code to the robot](#pushing-code-to-the-robot)
+ 2. [Programming!](#programming)
+ 3. [Scheduler](#scheduler)
+ 4. [Subsystems](#subsystems)
+ 5. [Commands](#commands)
+	 1. [Starting commands](#starting-commands)
+	 2. [Active commands](#active-commands)
+ 6. [`Series`](#series)
+ 7. [`DriveCommand`](#drivecommand)
+ 8. [Drive train](#drive-train)
+	 1. [Autopilot](#autopilot)
+	 2. [States](#states)
+	 3. [Acceleration curve](#acceleration-curve)
+ 9. [`WebSocketTableServer`](#websockettableserver)
+	 1. [Dashboard](#dashboard)
+	 2. [VisionServer](#visionserver)
+ 10. [`Robot` (main class)](#robot-main-class)
+ 11. [`Notifier`](#notifier)
+ 12. [Checklists for adding new features](#checklists-for-adding-new-features)
+	 1. [Subsystems](#subsystems-1)
+	 2. [Commands](#commands-1)
+	 3. [Teleop controls](#teleop-controls)
+ 13. [Auto](#auto)
+ 14. [Removed classes](#removed-classes)
+ 15. [Driving](#driving)
+	 1. [Controls](#controls)
+	 2. [MMDashboard](#mmdashboard)
+
 # Setting up a workspace
 
 As of now, we don't use Eclipse anymore. We use a combination of [Intellij IDEA](https://www.jetbrains.com/idea/) for the development environment and [GradleRIO](https://github.com/Open-RIO/GradleRIO) for the workspace.
@@ -207,7 +239,7 @@ The MMDashboard won't show new values by default. The webpage must be edited to 
 
 The `VisionServer` runs on port `5506`. This is connected to by the Raspberry Pi, which handles vision processing. This server is recessive, meaning it will update the table to the contents of whichever client has most recently connected whenever a new connection is opened.
 
-## Robot (main class)
+## `Robot` (main class)
 
 The `Robot` class is the main class that ties everything together. It also contains the functionality formerly present in the `Teleop` and `OI` classes. It...
 
